@@ -49,13 +49,17 @@ p = readInput(varargin);
 
 %% Start processing
 h1=figure;
+% Put figure on the top left corner
+% Adjust size knowing that we will be showing the image at 50% magnification
+% and the original size is 1080 x 1920
+set(h1,'Position',[0 350 640 360]);     
 frameCount = 0;
 
 %% Mark the pellet
 % Read first frame to mark the pellet
 frame = readFrame(obj.video);
 frameCount = frameCount+1;
-imshow(frame);
+imshow(frame,'InitialMagnification',50);
 disp('Mark the target pellet in the image displayed\n');
 % Call imageMark for the given frame to mark the pellet
 [position, pelletImage] = imageMark(frame);
@@ -109,7 +113,7 @@ while ~strcmpi(reply,'x')
     else
         break
     end
-    imshow(frame);
+    imshow(frame,'InitialMagnification',50);
     reply = input('Do you wish mark a paw in the image? or Exit [Any key - Y | N - No | X - Exit]','s');
 end
 tremorFlag = input('Did you notice tremor in the video? [Y | N]: ', 's');
