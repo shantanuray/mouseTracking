@@ -1,5 +1,5 @@
 function [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePelletGrab(varargin)
-% [pawPosition, grabResult, isTremorCase] = markMousePelletGrab;
+% [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePelletGrab;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
 % The program does not detect paw or pellet automatically but
@@ -22,14 +22,14 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePell
 % Outputs:
 %   - pelletPosition:   Position of the target pellet identified 
 %                       at the start of the program
-%                       struct('position','imageFile','frameCount')
+%                       Structure with fields ('position','imageFile','frameCount')
 %   - pawPosition:      Position of the paw in every frame
-%                       struct('position','imageFile','frameCount')
+%                       Structure with fields ('position','imageFile','frameCount')
 %   - grabResult:       The outcome of the grab:
 %                       * Overreach
 %                       * Underreach
 %                       * Prehension (user suggested label for prehension)
-%                       struct('outcome','pawPosition')
+%                       Structure with fields ('outcome','position','imageFile','frameCount')
 %   - isTremorCase:     Was a tremor identified by the observer in the mouse grab
 %                       logical (0,1)
 % Usage:
@@ -50,22 +50,23 @@ p = readInput(varargin);
 %% Start processing
 h1=figure;
 % Put figure on the top left corner
-% Adjust size knowing that we will be showing the image at 50% magnification
-% and the original size is 1080 x 1920
-set(h1,'Position',[0 350 640 360]);     
+% Adjust size for optimal viewing. Remove toolbars
+% Note the original size is 1080 x 1920
+set(h1,'Position',[0 350 800 450], 'Toolbar','None', 'Menubar','None');     
 frameCount = 0;
 
 %% Mark the pellet
 % Read first frame to mark the pellet
 frame = readFrame(obj.video);
 frameCount = frameCount+1;
-imdisplay(frame);
-disp('Mark the target pellet in the image displayed\n');
+h1=imdisplay(frame,h1);
+disp('Mark the target pellet in the image displayed');
 % Call imageMark for the given frame to mark the pellet
 [position, pelletImage] = imageMark(frame);
 fileName = saveImage(pelletImage, obj.imageFolder{1,1}, [obj.savePrefix,'_',int2str(frameCount)]);
 pelletPosition = struct('position', position,'imageFile',fileName,'frameCount',frameCount);
-reply = input('Do you wish mark a paw in the image [Yes|No] or Exit? [Yes - Any key | No - N | Exit - X]\n','s');
+h1=imdisplay(frame,h1);
+reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]\n','s');
 while ~strcmpi(reply,'x')
     %% Continue the process of identification
     % Now we start identifying the paw in each frame
@@ -77,9 +78,8 @@ while ~strcmpi(reply,'x')
         reply = '';
         outcome = '';
         while isempty(reply)
-            reply = input(['\nDo you wish to continue to next image [Press enter]\n\n',...
-                'or do you wish to specify a mouse grab - if so, \n',... 
-                'use one of the following options - [1 | 2 | 3] \n',...
+            reply = input(['\nDo you wish to continue to next image [Enter]\n',...
+                'Or\nSpecify a mouse grab using options - [1 or 2 or 3] \n',...
                 '1 => Overreach\n',...
                 '2 => Underreach\n',...
                 '3 => Prehension\n'],'s');
@@ -103,7 +103,9 @@ while ~strcmpi(reply,'x')
         end
         if ~isempty(outcome)
             fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount),'_',outcome]);
-            grabResult = [grabResult; struct('outcome',outcome,'pawPosition',pawPosition(end))];
+            grabResult = [grabResult; ...
+            struct('outcome',outcome,'position',pawPosition(end).position,...
+                'imageFile',fileName,'frameCount',pawPosition(end).frameCount)];
         end
     end
     if hasFrame(obj.video)
@@ -113,10 +115,11 @@ while ~strcmpi(reply,'x')
     else
         break
     end
-    imdisplay(frame);
-    reply = input('Do you wish mark a paw in the image? or Exit [Any key - Y | N - No | X - Exit]','s');
+    h1=imdisplay(frame,h1);
+    reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]\n','s');
+
 end
-tremorFlag = input('Did you notice tremor in the video? [Y | N]: ', 's');
+tremorFlag = input('Did you notice tremor in the video? [Y | N]\n', 's');
 isTremorCase = lower(tremorFlag)=='y';
 %% TODO Provide support for image files
 % % Create imageDatastore from the raw images
@@ -155,6 +158,7 @@ close(h1); return;
     function [obj, pelletPosition, pawPosition, grabResult, isTremorCase] = initializeSystem(p)
 
         % Get folder where the training images are stored
+        disp('Select video for marking mouse grabs (*.mp4, *.avi)');
         if isempty(p.Results.VideoFile)
             [fileName, fpath] = uigetfile({'*.mp4;*.avi', 'Select video for marking mouse grabs (*.mp4, *.avi)'});
             obj.videoFile = fullfile(fpath, fileName);
@@ -197,9 +201,6 @@ close(h1); return;
         pelletPosition = struct([]);
         pawPosition = struct([]);
         grabResult = struct([]);
-        % pelletPosition = struct('position',[],'imageFile','','frameCount',[]);
-        % pawPosition = struct('position',[],'imageFile','','frameCount',[]);
-        % grabResult = struct('outcome','','pawPosition',struct('position',[],'imageFile','','frameCount',[]));
         isTremorCase = logical(0);
     end
 
@@ -266,7 +267,18 @@ close(h1); return;
         imgMarked = img(position(2):position(2)+position(4)-1, position(1):position(1)+position(3)-1,:);
     end
 
-    function imdisplay(img)
+    function h = imdisplay(img,h)
+        if ~ishandle(h)
+            % If the figure was closed, reopen it
+            h = figure;
+            % Put figure on the top left corner
+            % Adjust size for optimal viewing. Remove toolbars
+            % Note the original size is 1080 x 1920
+            set(h,'Position',[0 350 800 450], 'Toolbar','None', 'Menubar','None');  
+        else
+            figure(h);
+        end
+        % Show the image and fit it to the figure window
         imshow(img,'InitialMagnification','fit','Border','tight');
     end
 end
