@@ -59,7 +59,7 @@ frameCount = 0;
 % Read first frame to mark the pellet
 frame = readFrame(obj.video);
 frameCount = frameCount+1;
-imshow(frame,'InitialMagnification','fit');
+imdisplay(frame);
 disp('Mark the target pellet in the image displayed\n');
 % Call imageMark for the given frame to mark the pellet
 [position, pelletImage] = imageMark(frame);
@@ -113,7 +113,7 @@ while ~strcmpi(reply,'x')
     else
         break
     end
-    imshow(frame,'InitialMagnification','fit');
+    imdisplay(frame);
     reply = input('Do you wish mark a paw in the image? or Exit [Any key - Y | N - No | X - Exit]','s');
 end
 tremorFlag = input('Did you notice tremor in the video? [Y | N]: ', 's');
@@ -266,4 +266,7 @@ close(h1); return;
         imgMarked = img(position(2):position(2)+position(4)-1, position(1):position(1)+position(3)-1,:);
     end
 
+    function imdisplay(img)
+        imshow(img,'InitialMagnification','fit','Border','tight');
+    end
 end
