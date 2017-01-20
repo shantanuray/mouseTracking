@@ -1,4 +1,4 @@
-function [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePelletGrab(varargin)
+function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = markMousePelletGrab(varargin)
 % [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePelletGrab;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
@@ -35,9 +35,9 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePell
 % Usage:
 % [...] = markMousePelletGrab; 
 %   User will be asked to point the video file
-% [...] = markMousePelletGrab('VideoFile', obj.videoFile);
+% [...] = markMousePelletGrab('VideoFile', videoFile);
 %   Provide video file. obj.standardImageSize assumed to be [100 x 100 pixels]
-% [...] = markMousePelletGrab('VideoFile', obj.videoFile, 'StandardImageSize', standardImageSize);
+% [...] = markMousePelletGrab('VideoFile', videoFile, 'StandardImageSize', standardImageSize);
 %   Provide video file and provide obj.standardImageSize
 
 %% TODO Provide support for image files
@@ -45,7 +45,7 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePell
 %   Provide path where the image files are stored
 
 p = readInput(varargin);
-[obj, pelletPosition, pawPosition, grabResult, isTremorCase] = initializeSystem(p);
+[obj, pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = initializeSystem(p);
 
 %% Start processing
 h1=figure;
@@ -155,17 +155,17 @@ close(h1); return;
     end
 
     %% Initialize and setup system objects and outputs
-    function [obj, pelletPosition, pawPosition, grabResult, isTremorCase] = initializeSystem(p)
+    function [obj, pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = initializeSystem(p)
 
         % Get folder where the training images are stored
         disp('Select video for marking mouse grabs (*.mp4, *.avi)');
         if isempty(p.Results.VideoFile)
             [fileName, fpath] = uigetfile({'*.mp4;*.avi', 'Select video for marking mouse grabs (*.mp4, *.avi)'});
-            obj.videoFile = fullfile(fpath, fileName);
+            videoFile = fullfile(fpath, fileName);
             [~, obj.savePrefix] = fileparts(fileName);
         else
-            obj.videoFile = p.Results.VideoFile;
-            [fpath, obj.savePrefix] = fileparts(obj.videoFile);
+            videoFile = p.Results.VideoFile;
+            [fpath, obj.savePrefix] = fileparts(videoFile);
         %% TODO Provide support for image files
         % elseif ~isempty(p.Results.RawImageFolder)
         %     rawImageFolder = p.Results.RawImageFolder;
@@ -174,9 +174,9 @@ close(h1); return;
         
         end
 
-        if ~isempty(obj.videoFile)
+        if ~isempty(videoFile)
             % Read video file
-            obj.video = VideoReader(obj.videoFile);
+            obj.video = VideoReader(videoFile);
         else
             error('Could not find video. Please check and try again');
         end
