@@ -1,5 +1,5 @@
 function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = markMousePelletGrab(varargin)
-% [pelletPosition, pawPosition, grabResult, isTremorCase] = markMousePelletGrab;
+% [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = markMousePelletGrab;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
 % The program does not detect paw or pellet automatically but
@@ -22,21 +22,21 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = ma
 % Outputs:
 %   - pelletPosition:   Position of the target pellet identified 
 %                       at the start of the program
-%                       Structure with fields ('position','imageFile','frameCount')
+%                       Structure with fields ('position','centroid',imageFile','frameCount')
 %   - pawPosition:      Position of the paw in every frame
-%                       Structure with fields ('position','imageFile','frameCount')
+%                       Structure with fields ('position','centroid','imageFile','frameCount')
 %   - grabResult:       The outcome of the grab:
 %                       * Overreach
 %                       * Underreach
 %                       * Prehension (user suggested label for prehension)
-%                       Structure with fields ('outcome','position','imageFile','frameCount')
+%                       Structure with fields ('outcome','position','centroid','imageFile','frameCount')
 %   - isTremorCase:     Was a tremor identified by the observer in the mouse grab
 %                       logical (0,1)
 % Usage:
 % [...] = markMousePelletGrab; 
 %   User will be asked to point the video file
 % [...] = markMousePelletGrab('VideoFile', videoFile);
-%   Provide video file. obj.standardImageSize assumed to be [100 x 100 pixels]
+%   Provide video file. obj.standardImageSize assumed to be [64 x 64 pixels]
 % [...] = markMousePelletGrab('VideoFile', videoFile, 'StandardImageSize', standardImageSize);
 %   Provide video file and provide obj.standardImageSize
 
@@ -62,18 +62,18 @@ frameCount = frameCount+1;
 h1=imdisplay(frame,h1);
 disp('Mark the target pellet in the image displayed');
 % Call imageMark for the given frame to mark the pellet
-[position, pelletImage] = imageMark(frame);
+[position, pelletCentroid, pelletImage] = imageMark(frame);
 fileName = saveImage(pelletImage, obj.imageFolder{1,1}, [obj.savePrefix,'_',int2str(frameCount)]);
-pelletPosition = struct('position', position,'imageFile',fileName,'frameCount',frameCount);
+pelletPosition = struct('position', position,'centroid',pelletCentroid,'imageFile',fileName,'frameCount',frameCount);
 h1=imdisplay(frame,h1);
 reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]\n','s');
 while ~strcmpi(reply,'x')
     %% Continue the process of identification
     % Now we start identifying the paw in each frame
     if ~strcmpi(reply, 'n')
-        [position, imgMatch] = imageMark(frame);
+        [position, centroid, imgMatch] = imageMark(frame);
         fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount)]);
-        pawPosition = [pawPosition; struct('position',position,'imageFile',fileName,'frameCount',frameCount)];
+        pawPosition = [pawPosition; struct('position',position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
         
         reply = '';
         outcome = '';
@@ -105,7 +105,7 @@ while ~strcmpi(reply,'x')
             fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount),'_',outcome]);
             grabResult = [grabResult; ...
             struct('outcome',outcome,'position',pawPosition(end).position,...
-                'imageFile',fileName,'frameCount',pawPosition(end).frameCount)];
+                'centroid',pawPosition(end).centroid,'imageFile',fileName,'frameCount',pawPosition(end).frameCount)];
         end
     end
     if hasFrame(obj.video)
@@ -135,7 +135,8 @@ isTremorCase = lower(tremorFlag)=='y';
 %         break;
 %     end
 % end
-
+[matDir,matPrefix]=fileparts(obj.videoFile);
+save(fullfile(matDir,[matPrefix,'.mat']), 'pelletPosition', 'pawPosition', 'grabResult', 'isTremorCase', 'videoFile');
 close(h1); return;
 
     %% Read input
@@ -207,7 +208,8 @@ close(h1); return;
     % For the given frame/image, ask the user to identify
     % and mark objects
     % Return position and and the marked image (standard size)
-    function [position, imgMatch] = imageMark(img)
+    function [position, centroid, imgMatch] = imageMark(img)
+        % Ask user to draw rectangle to mark object
         position = int16(getrect);
         % Get marked image (size as marked)
         imgMarked = getImageMarked(img, position);
@@ -234,10 +236,11 @@ close(h1); return;
         if length(centroids)~=2
             disp(imageProp);
             disp(size(imgBin,1));
+            centroid=[];
             imgMatch=[];
             return;
         end
-        centroidRow=reshape(centroids,[1 2]); 
+        centroid=reshape(centroids,[1 2]); 
 
         %% Calculated position of region wrt original image
         % 1. Calculate location of centroid wrt original image
@@ -246,7 +249,9 @@ close(h1); return;
         %   position(1:2) = [centroids(1)-50, centroids(2)-50];
         % 3. Then finally mark the width and height of the 100 x 100 region
         %   position(3:4) = [100 100];
-        position = [[centroidRow + position(1:2) - int16(obj.standardImageSize/2)],obj.standardImageSize];
+        position = [[centroid + position(1:2) - int16(obj.standardImageSize/2)],obj.standardImageSize];
+        % Position of centroid with respect to this standard size image is the center of the image
+        centroid=int16(obj.standardImageSize/2);
         % Get marked image (standard image size around marked image centroid)
         imgMatch = getImageMarked(img, position);
     end
