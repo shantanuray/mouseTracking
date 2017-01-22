@@ -45,15 +45,19 @@ videoReader = vision.VideoFileReader(videoFile);
 vfile{1}=fullfile(savedir, [savePrefix,'_Trace.mp4']);
 atariVideoWriter    = vision.VideoFileWriter(vfile{1}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
 vfile{2}=fullfile(savedir, [savePrefix,'_Mask.mp4']);
-maskVideoWriter     = vision.VideoFileWriter(vfile{2}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
-
+% maskVideoWriter     = vision.VideoFileWriter(vfile{2}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+vfile{3}=fullfile(savedir, [savePrefix,'_VideoWTrace.mp4']);
+vwtVideoWriter     = vision.VideoFileWriter(vfile{3}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
 
 %% Init the video players
 % Atari Video - Square boxes to denote objects
 atariPlayer = vision.VideoPlayer('Position', [20, 400, 700, 400]);
 
+% Actual Video with Trace
+vwtPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+
 % Mask Video - Actual marked objects shown as black and white
-maskPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+% maskPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
 
 
 %% Start processing
@@ -96,16 +100,15 @@ xlabel(h3,'Approach - Theta')
 
 %% Save video
 % Init the mask and the atari base images
-mask = uint8(zeros(1080,1920,3));
-atari = uint8(zeros(1080,1920,3));
+% mask   = uint8(zeros(1080,1920,3));
+atari   = uint8(zeros(1080,1920,3));
+vwt     = uint8(zeros(1080,1920,3));
 bbox=[];
 outcome={};
 for i = 1:pawPosition(end).frameCount
     frame = videoReader.step();
     loc=(i==cat(1,pawPosition.frameCount));
     if sum(loc)
-        
-        
         %% Create the atari image
         % Reset the image
         atari = uint8(zeros(1080,1920,3));
@@ -114,25 +117,39 @@ for i = 1:pawPosition(end).frameCount
         % Write the paw as red
         atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
 
-        %% Create the mask image
+        %% Create the video with trace image
         % Reset the image
-        mask = uint8(zeros(1080,1920,3));
-        % Write a white pellet image to a black background
-        img = imbinarize(rgb2gray(getImageMarked(frame,refBox)));
-        % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,1) = 255*(img==1);
-        % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,2) = 255*(img==1);
-        % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,3) = 255*(img==1);
-        mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,1)=0;
-        mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
-        mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,3)=0;
-        % Write the white paw image to the mask
-        img = imbinarize(rgb2gray(getImageMarked(frame,pawBox(loc,:))));
-        mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,1)=255*(img==1);
-        mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,2)=255*(img==1);
-        mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,3)=255*(img==1);
-        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
-        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,2)=0;
-        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,3)=0;
+        vwt = frame;
+        % Write the pellet as green
+        vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
+        % Write the paw as red
+        vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
+        % Mark trajectory as blue
+        for i = 1:find(loc)
+            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,1)=255;
+            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,2)=255;
+            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,3)=0;
+        end
+
+        % %% Create the mask image
+        % % Reset the image
+        % mask = uint8(zeros(1080,1920,3));
+        % % Write a white pellet image to a black background
+        % img = imbinarize(rgb2gray(getImageMarked(frame,refBox)));
+        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,1) = 255*(img==1);
+        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,2) = 255*(img==1);
+        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,3) = 255*(img==1);
+        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,1)=0;
+        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
+        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,3)=0;
+        % % Write the white paw image to the mask
+        % img = imbinarize(rgb2gray(getImageMarked(frame,pawBox(loc,:))));
+        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,1)=255*(img==1);
+        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,2)=255*(img==1);
+        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,3)=255*(img==1);
+        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
+        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,2)=0;
+        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,3)=0;
 
         match = pawPosition(loc).frameCount==[grabResult(:).frameCount];
         if sum(match)
@@ -141,18 +158,23 @@ for i = 1:pawPosition(end).frameCount
             bbox    = [bbox;[grabResult(match).position]];
         end
         if ~isempty(bbox)
-            mask   = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
+            atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
+            % mask   = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
+            vwt   = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
             frame   = insertObjectAnnotation(frame, 'rectangle', bbox, outcome);
         end
     end
     atariPlayer.step(atari);
-    maskPlayer.step(mask);
+    % maskPlayer.step(mask);
+    vwtPlayer.step(vwt);
     pause(1/frameRate);
     step(atariVideoWriter, atari);
-    step(maskVideoWriter, mask);
+    % step(maskVideoWriter, mask);
+    step(vwtVideoWriter, vwt);
 end
 release(atariVideoWriter);
-release(maskVideoWriter);
+% release(maskVideoWriter);
+release(vwtVideoWriter);
 videoFile=vfile;
 
     %% For the given box, [x y width height], return the selected image with actual
