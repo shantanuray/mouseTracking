@@ -52,12 +52,20 @@ h1=figure;
 % Put figure on the top left corner
 % Adjust size for optimal viewing. Remove toolbars
 % Note the original size is 1080 x 1920
-set(h1,'Position',[0 350 800 450], 'Toolbar','None', 'Menubar','None');     
+set(h1,'Position',[321 350 640 360], 'Toolbar','None', 'Menubar','None');     
 frameCount = 0;
+
+h0=figure;
+set(h0,'Position',[0 350 320 180], 'Toolbar','None', 'Menubar','None');   
+
+h2=figure;
+set(h2,'Position',[961 350 320 180], 'Toolbar','None', 'Menubar','None');
 
 %% Mark the pellet
 % Read first frame to mark the pellet
 frame = readFrame(obj.video);
+oldframe = zeros(size(frame));
+nextframe = zeros(size(frame));
 frameCount = frameCount+1;
 h1=imdisplay(frame,h1);
 disp('Mark the target pellet in the image displayed');
@@ -65,11 +73,23 @@ disp('Mark the target pellet in the image displayed');
 [position, pelletCentroid, pelletImage] = imageMark(frame);
 fileName = saveImage(pelletImage, obj.imageFolder{1,1}, [obj.savePrefix,'_',int2str(frameCount)]);
 pelletPosition = struct('position', position,'centroid',pelletCentroid,'imageFile',fileName,'frameCount',frameCount);
-h1=imdisplay(frame,h1);
-reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]\n','s');
+reply = '';
 while ~strcmpi(reply,'x')
     %% Continue the process of identification
     % Now we start identifying the paw in each frame
+    if hasFrame(obj.video)
+        % Read frame
+        nextframe = readFrame(obj.video);
+        h2=imdisplay(nextframe,h2);
+    else
+        nextframe = [];
+        close(h2);
+    end
+    h1=imdisplay(frame,h1);
+    reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]    ','s');
+    if strcmpi(reply,'x')
+        break;
+    end
     if ~strcmpi(reply, 'n')
         [position, centroid, imgMatch] = imageMark(frame);
         fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount)]);
@@ -108,18 +128,19 @@ while ~strcmpi(reply,'x')
                 'centroid',pawPosition(end).centroid,'imageFile',fileName,'frameCount',pawPosition(end).frameCount)];
         end
     end
-    if hasFrame(obj.video)
-        % Read frame
-        frame = readFrame(obj.video);
+
+    oldframe = frame;
+    h0=imdisplay(oldframe,h0);
+
+    if ~isempty(nextframe)
+        frame = nextframe;
         frameCount = frameCount+1;
     else
-        break
+        close(h0);close(h1);
+        break;
     end
-    h1=imdisplay(frame,h1);
-    reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]\n','s');
-
 end
-tremorFlag = input('Did you notice tremor in the video? [Y | N]\n', 's');
+tremorFlag = input('Did you notice tremor in the video? [Y | N]     ', 's');
 isTremorCase = lower(tremorFlag)=='y';
 %% TODO Provide support for image files
 % % Create imageDatastore from the raw images
@@ -135,9 +156,9 @@ isTremorCase = lower(tremorFlag)=='y';
 %         break;
 %     end
 % end
-[matDir,matPrefix]=fileparts(obj.videoFile);
+[matDir,matPrefix]=fileparts(videoFile);
 save(fullfile(matDir,[matPrefix,'.mat']), 'pelletPosition', 'pawPosition', 'grabResult', 'isTremorCase', 'videoFile');
-close(h1); return;
+return;
 
     %% Read input
     function p = readInput(input)
