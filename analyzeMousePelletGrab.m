@@ -207,7 +207,7 @@ videoFile=traceVideoFile;
     function [centroid, bbox] = getBox(objPosition)
         offset      = double(cat(1, objPosition.centroid));
         pos         = double(cat(1, objPosition.position));
-        centroid    = pos(:,1:2)+offset(1,1:2); % Hack for now. For some reason offset length is coming one less at times
+        centroid    = pos(:,1:2)+offset(1,1:2); % Hack for now. For some reason offset length is coming one less at times   
         bbox        = pos;
     end
 end
