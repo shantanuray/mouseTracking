@@ -167,7 +167,11 @@ for i = 1:pawPosition(end).frameCount
         % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,2)=0;
         % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,3)=0;
 
-        match = pawPosition(loc).frameCount==[grabResult(:).frameCount];
+        if isempty(grabResult)
+            match = [];
+        else
+            match = pawPosition(loc).frameCount==[grabResult(:).frameCount];
+        end
         if sum(match)
             % if there is a coinciding grab, then mark the outcome
             outcome = [outcome;{[grabResult(match).outcome,'-',int2str(grabResult(match).frameCount)]}];

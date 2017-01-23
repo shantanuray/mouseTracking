@@ -52,14 +52,14 @@ h1=figure;
 % Put figure on the top left corner
 % Adjust size for optimal viewing. Remove toolbars
 % Note the original size is 1080 x 1920
-set(h1,'Position',[321 350 640 360], 'Toolbar','None', 'Menubar','None');     
+set(h1,'Position',[501 320 768 432], 'Toolbar','None', 'Menubar','None');     
 frameCount = 0;
 
 h0=figure;
-set(h0,'Position',[0 350 320 180], 'Toolbar','None', 'Menubar','None');   
+set(h0,'Position',[1 480 480 270], 'Toolbar','None', 'Menubar','None');   
 
 h2=figure;
-set(h2,'Position',[961 350 320 180], 'Toolbar','None', 'Menubar','None');
+set(h2,'Position',[1 187 480 270], 'Toolbar','None', 'Menubar','None');
 
 %% Mark the pellet
 % Read first frame to mark the pellet
