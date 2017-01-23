@@ -95,15 +95,15 @@ while ~strcmpi(reply,'x')
         fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount)]);
         pawPosition = [pawPosition; struct('position',position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
         
-        reply = '';
+        grabType = '';
         outcome = '';
-        while isempty(reply)
-            reply = input(['\nDo you wish to continue to next image [Enter]\n',...
+        while isempty(grabType)
+            grabType = input(['\nDo you wish to continue to next image [Enter]\n',...
                 'Or\nSpecify a mouse grab using options - [1 or 2 or 3] \n',...
                 '1 => Overreach\n',...
                 '2 => Underreach\n',...
                 '3 => Prehension\n'],'s');
-            switch reply
+            switch grabType
             case '1'
                 outcome = 'overreach';
             case '2'
@@ -115,9 +115,9 @@ while ~strcmpi(reply,'x')
                 outcome = strrep(outcome,' ','');
                 %% TODO Provide previously used label choices as reference
             case ''
-                reply = 'next';
+                grabType = 'next';
             otherwise
-                reply = '';
+                grabType = '';
                 disp('Warning: You have marked an incorrect input. Please try again.')
             end
         end
