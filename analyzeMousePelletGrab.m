@@ -31,7 +31,13 @@ if nargin~=3
 end
 % Size the atari box size (paw and pellet)
 boxSize = 5;
-
+pelletBoxColor = zeros(boxSize*2+1,boxSize*2+1,3);
+pelletBoxColor(:,:,2) = 255; % Green
+pawBoxColor = zeros(boxSize*2+1,boxSize*2+1,3);
+pawBoxColor(:,:,1) = 255; % Red
+traceSize = 2;
+traceBoxColor = zeros(traceSize*2+1,traceSize*2+1,3);
+traceBoxColor(:,:,1:2) = 255; % Yellow
 frameRate = 4;
 % Location of saved video
 disp('Where should the video be saved?');
@@ -105,30 +111,34 @@ atari   = uint8(zeros(1080,1920,3));
 vwt     = uint8(zeros(1080,1920,3));
 bbox=[];
 outcome={};
-for i = 1:pawPosition(end).frameCount
+for i = 1:length(pawPosition)              % pawPosition(end).frameCount
+    % We are using the original video to superimpose to the grab
+    % We go through every frame of the original video
     frame = videoReader.step();
+    
+    % But the marking may not have been done on every frame
+    % So we process only if the frame has been marked
+    % --------- See markMousePelletGrab.m
     loc=(i==cat(1,pawPosition.frameCount));
     if sum(loc)
         %% Create the atari image
         % Reset the image
         atari = uint8(zeros(1080,1920,3));
         % Write the pellet as green
-        atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
+        atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
-        atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
+        atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
 
         %% Create the video with trace image
         % Reset the image
         vwt = frame;
         % Write the pellet as green
-        vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
+        vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
-        vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
-        % Mark trajectory as blue
-        for i = 1:find(loc)
-            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,1)=255;
-            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,2)=255;
-            vwt(pawCentroid(i,2)-2:pawCentroid(i,2)+2,pawCentroid(i,1)-2:pawCentroid(i,1)+2,3)=0;
+        vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        % Mark trajectory as yellow
+        for j = 1:find(loc)
+            vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
         end
 
         % %% Create the mask image
@@ -161,16 +171,16 @@ for i = 1:pawPosition(end).frameCount
             atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
             % mask   = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
             vwt   = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
-            frame   = insertObjectAnnotation(frame, 'rectangle', bbox, outcome);
+            % frame   = insertObjectAnnotation(frame, 'rectangle', bbox, outcome);
         end
+        atariPlayer.step(atari);
+        % maskPlayer.step(mask);
+        vwtPlayer.step(vwt);
+        pause(1/frameRate);
+        step(atariVideoWriter, atari);
+        % step(maskVideoWriter, mask);
+        step(vwtVideoWriter, vwt);
     end
-    atariPlayer.step(atari);
-    % maskPlayer.step(mask);
-    vwtPlayer.step(vwt);
-    pause(1/frameRate);
-    step(atariVideoWriter, atari);
-    % step(maskVideoWriter, mask);
-    step(vwtVideoWriter, vwt);
 end
 release(atariVideoWriter);
 % release(maskVideoWriter);
