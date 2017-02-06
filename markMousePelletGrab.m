@@ -1,5 +1,5 @@
-function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = markMousePelletGrab(varargin)
-% [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = markMousePelletGrab;
+function [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab(varargin)
+% [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
 % The program does not detect paw or pellet automatically but
@@ -10,7 +10,11 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = ma
 %       pellet that the mouse was trying to grab in the task. There can 
 %       be only one target pellet for a given video currently
 %       TODO: Handle multiple targets
-%   2. Identify paw: In every subsequent frame, user is asked to identify
+%   1a. Identify pellet: In case the location of the pellet changes, user
+%       mark updated position during the program
+%   1b. Identify other regions of interest: User can mark other regions of
+%       interest at any time and provide what is being marked (eg. nose)
+%   2. Identify paw: In every frame, user is asked to identify
 %       the position of the paw
 %   3. Identify and classify grab: At each stage the user is also asked if
 %       the mouse grabbed the pellet and if so, classify it as 'Overreach',
@@ -20,11 +24,9 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = ma
 %       user is asked if the user saw tremor
 % 
 % Outputs:
-%   - pelletPosition:   Position of the target pellet identified 
-%                       at the start of the program
-%                       Structure with fields ('position','centroid',imageFile','frameCount')
-%   - pawPosition:      Position of the paw in every frame
-%                       Structure with fields ('position','centroid','imageFile','frameCount')
+%   - roiData:          Position of the selection by user for paw, pellet, node, etc.  
+%                       Structure with fields ('roi','position','centroid',imageFile','frameCount')
+%                       where roi is one of (paw, pellet, node, ...)
 %   - grabResult:       The outcome of the grab:
 %                       * Overreach
 %                       * Underreach
@@ -37,15 +39,19 @@ function [pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = ma
 %   User will be asked to point the video file
 % [...] = markMousePelletGrab('VideoFile', videoFile);
 %   Provide video file. obj.standardImageSize assumed to be [64 x 64 pixels]
-% [...] = markMousePelletGrab('VideoFile', videoFile, 'StandardImageSize', standardImageSize);
-%   Provide video file and provide obj.standardImageSize
+% [...] = markMousePelletGrab('VideoFile', 'test.mp4', 'Mode', 'default', StandardImageSize', [64 64]);
+%   Provide video file and provide obj.standardImageSize and
+%   mode: 
+%   - Default   - Pellet and paw
+%   - Nose      - Nose only
+%   - All       - Paw, Pellet and nose
 
 %% TODO Provide support for image files
 % [...] = markMousePelletGrab('RawImageFolder', fpath, 'StandardImageSize', standardImageSize);
 %   Provide path where the image files are stored
 
 p = readInput(varargin);
-[obj, pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = initializeSystem(p);
+[obj, roiData, grabResult, isTremorCase, videoFile] = initializeSystem(p);
 
 %% Start processing
 h1=figure;
@@ -61,22 +67,15 @@ set(h0,'Position',[1 480 480 270], 'Toolbar','None', 'Menubar','None');
 h2=figure;
 set(h2,'Position',[1 187 480 270], 'Toolbar','None', 'Menubar','None');
 
-%% Mark the pellet
-% Read first frame to mark the pellet
+% Read first frame 
 frame = readFrame(obj.video);
 oldframe = zeros(size(frame));
 nextframe = zeros(size(frame));
 frameCount = frameCount+1;
-h1=imdisplay(frame,h1);
-disp('Mark the target pellet in the image displayed');
-% Call imageMark for the given frame to mark the pellet
-[position, pelletCentroid, pelletImage] = imageMark(frame);
-fileName = saveImage(pelletImage, obj.imageFolder{1,1}, [obj.savePrefix,'_',int2str(frameCount)]);
-pelletPosition = struct('position', position,'centroid',pelletCentroid,'imageFile',fileName,'frameCount',frameCount);
-reply = '';
+
+reply = 'y';
 while ~strcmpi(reply,'x')
-    %% Continue the process of identification
-    % Now we start identifying the paw in each frame
+    h1=imdisplay(frame,h1);
     if hasFrame(obj.video)
         % Read frame
         nextframe = readFrame(obj.video);
@@ -85,47 +84,84 @@ while ~strcmpi(reply,'x')
         nextframe = [];
         close(h2);
     end
-    h1=imdisplay(frame,h1);
-    reply = input('Mark the paw? [Yes - Any key | No - N | Exit - X]    ','s');
-    if strcmpi(reply,'x')
-        break;
-    end
-    if ~strcmpi(reply, 'n')
-        [position, centroid, imgMatch] = imageMark(frame);
-        fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount)]);
-        pawPosition = [pawPosition; struct('position',position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
-        
-        grabType = '';
+    reply = 'y';
+    while ~isempty(reply)
+        roi='';
         outcome = '';
-        while isempty(grabType)
-            grabType = input(['\nDo you wish to continue to next image [Enter]\n',...
-                'Or\nSpecify a mouse grab using options - [1 or 2 or 3] \n',...
-                '1 => Overreach\n',...
-                '2 => Underreach\n',...
-                '3 => Prehension\n'],'s');
-            switch grabType
-            case '1'
-                outcome = 'overreach';
-            case '2'
-                outcome = 'underreach';
-            case '3'
-                % Provide input as to what type of prehension it was
-                outcome = lower(input('How would you classify the prehension - Provide a single word: ', 's'));
-                % Remove spaces - Converting to single word
-                outcome = strrep(outcome,' ','');
-                %% TODO Provide previously used label choices as reference
-            case ''
-                grabType = 'next';
-            otherwise
-                grabType = '';
-                disp('Warning: You have marked an incorrect input. Please try again.')
-            end
+        menuindex = 0;
+        figure(h1);
+        reply = input(['Is there anything of interest?\n',...
+        '1 => Paw\n',...
+        '2 => Pellet\n',...
+        '3 => Nose\n',...
+        '4 => Other\n',...
+        'Next image  - Press Enter\n',...
+        'Exit        - Press X/x]    '],'s');
+        if isempty(reply)|strcmpi(reply,'x')
+            break;
         end
-        if ~isempty(outcome)
-            fileName = saveImage(imgMatch, obj.imageFolder{2,1}, [obj.savePrefix,'_',int2str(frameCount),'_',outcome]);
-            grabResult = [grabResult; ...
-            struct('outcome',outcome,'position',pawPosition(end).position,...
-                'centroid',pawPosition(end).centroid,'imageFile',fileName,'frameCount',pawPosition(end).frameCount)];
+        % Call imageMark for the given frame to mark the object
+        [position, centroid, img] = imageMark(frame, h1);
+        switch reply
+        case {'1'}
+            roi='Paw';
+            actionNum = '';
+            action = '';
+            outcome = '';
+            while isempty(actionNum)
+                actionNum = input(['\nDo you wish to continue to next image [Enter]\n',...
+                    'Or\nSpecify the kind of mouse action [Press 1 or 2 or 3] \n',...
+                    '1 => Reach\n',...
+                    '2 => Grasp\n',...
+                    '3 => Retrieve\n'],'s');
+                switch actionNum
+                case '1'
+                    action = 'Reach';
+                case '2'
+                    action = 'Grasp';
+                case '3'
+                    action = 'Retrieve';
+                case ''
+                    actionNum = 'next';
+                    reply = '';
+                otherwise
+                    actionNum = '';
+                    disp('Warning: You have marked an incorrect input. Please try again.')
+                end
+            end
+            [truefalse, menuindex] = ismember(action, {obj.actionFigure.action});
+            if menuindex>0
+                actionOptions = obj.actionFigure(menuindex).type;
+                consequenceOptions = obj.actionFigure(menuindex).consequence;
+                disp(['How would you further specify the action - ', action]);
+                actionType = menuSelect(actionOptions, false, true);
+                disp(['What was the result of the ',action,' action?']);
+                consequence = menuSelect(consequenceOptions, false, true);
+                reply = '';
+            end
+        case {'2'}
+            roi='Pellet';
+        case {'3'}
+            roi='Nose';
+        case {'4'}
+            roi = lower(input('What do you wish to mark?    ','s'));
+            roi = strrep(roi,' ','');
+            savedir = fullfile(obj.imageFolder,roi);
+            if ~isdir(savedir)
+                mkdir(savedir);
+            end
+        otherwise
+            roi = '';
+            disp('Warning: You have marked an incorrect input. Please try again.')
+        end
+        if ~isempty(roi)
+            fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
+            roiData = [roiData; ...
+                struct('roi',roi,'position', position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
+            if menuindex>0
+                grabResult = [grabResult; ...
+                struct('action',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+            end
         end
     end
 
@@ -157,17 +193,19 @@ isTremorCase = lower(tremorFlag)=='y';
 %     end
 % end
 [matDir,matPrefix]=fileparts(videoFile);
-save(fullfile(matDir,[matPrefix,'.mat']), 'pelletPosition', 'pawPosition', 'grabResult', 'isTremorCase', 'videoFile');
+save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile');
 return;
 
     %% Read input
     function p = readInput(input)
         p = inputParser;
         defaultVideoFile = '';
+        defaultMode = 'default';
         defaultStandardImageSize = [64,64];
         defaultRawImageFolder = '';
 
         addParameter(p,'VideoFile',defaultVideoFile, @ischar);
+        addParameter(p,'Mode',defaultMode, @ischar);
         addParameter(p,'StandardImageSize',defaultStandardImageSize, @isinteger);
 
         %% TODO Provide support for image files
@@ -177,7 +215,7 @@ return;
     end
 
     %% Initialize and setup system objects and outputs
-    function [obj, pelletPosition, pawPosition, grabResult, isTremorCase, videoFile] = initializeSystem(p)
+    function [obj, roiData, grabResult, isTremorCase, videoFile] = initializeSystem(p)
 
         % Get folder where the training images are stored
         disp('Select video for marking mouse grabs (*.mp4, *.avi)');
@@ -209,19 +247,30 @@ return;
         % Prepare folders for storing matches
         %   - Pellet
         %   - Paw
-        folderTypes = {'Pellet', 'Paw'};
+        %   - Nose
+        folderTypes = {'Pellet', 'Paw', 'Nose'};
+        obj.imageFolder = fullfile(fpath,'matches');
         for i = 1:length(folderTypes)
-            obj.imageFolder{i,1} = fullfile(fpath,'matches',folderTypes{i});
-            if ~isdir(obj.imageFolder{i,1})
-                mkdir(obj.imageFolder{i,1});
+            savedir = fullfile(obj.imageFolder,folderTypes{i});
+            if ~isdir(savedir)
+                mkdir(savedir);
             end
         end
+
+        % Initialize mouse action categories
+        obj.actionFigure = [
+            struct('action','Reach','type',{{'Success: Straight path','Error: Overreach','Error: Under reach'}},...
+                'consequence',{{'Grasp','Reach again','Pellet dispersed'}}),...
+            struct('action','Grasp','type',{{'Success: Pellet grasped','Error: Failure to curl into a grasp','Error: Failure to grasp', 'Error: Abnormal grip'}},...
+                'consequence',{{'Retrieve','Reach again','Pellet dispersed'}}),...
+            struct('action','Retrieve','type',{{'Success: Pellet brought to mouth','Error: failure to supinate','Error: failure to bring to mouth', 'Error: failure to transfer'}},...
+                'consequence',{{'Pellet in mouth','Reach again','Pellet dispersed'}})
+        ];
 
         obj.imgMatch = zeros(obj.standardImageSize);
 
         % Initialize outputs
-        pelletPosition = struct([]);
-        pawPosition = struct([]);
+        roiData = struct([]);
         grabResult = struct([]);
         isTremorCase = logical(0);
     end
@@ -229,7 +278,11 @@ return;
     % For the given frame/image, ask the user to identify
     % and mark objects
     % Return position and and the marked image (standard size)
-    function [position, centroid, imgMatch] = imageMark(img)
+    function [position, centroid, imgMatch] = imageMark(img, h)
+        if nargin>=2
+            % Bring image to forefront
+            figure(h);
+        end
         % Ask user to draw rectangle to mark object
         position = int16(getrect);
         % Get marked image (size as marked)
@@ -306,5 +359,44 @@ return;
         end
         % Show the image and fit it to the figure window
         imshow(img,'InitialMagnification','fit','Border','tight');
+    end
+
+    function out = menuSelect(options, skip, newoption)
+        % out = menuSelect(options, skip, newoption)
+        % options     - (cell array) the menu options; out = one of the options
+        % skip        - (boolean) if skip option has to be added - User clicks on Enter; out = ''
+        % newoption   - (boolean) specify a new value - User clicks N/n; out = new value type by user
+        out = '';
+        menureply = '';
+        menustr = '';
+        if skip
+            menustr = [menustr, 'Skip? Press Enter \nOr\n'];
+        end
+        menustr = [menustr, 'Choose one of the following \n'];
+        for i = 1:length(options)
+            menustr = [menustr, num2str(i), ' => ', options{i}, '\n'];
+        end
+        if newoption
+            menustr = [menustr, 'New type? Press [N/n]\n'];
+        end
+        while isempty(menureply)
+            menureply = input(menustr,'s');
+            if skip & isempty(menureply)
+                % Skip. Return empty
+                return;
+            elseif ~isempty(menureply)
+                if strcmpi(menureply,'n') % New option
+                    out = input('Type in new category and click enter >>  ','s');
+                else % Existing option chosen
+                    menunum = str2num(menureply);
+                    if menunum>0 & menunum<=length(options)
+                        out = options{menunum};
+                    else
+                        menureply = '';
+                        disp('Warning: Incorrect entry. Try again.')
+                    end
+                end
+            end
+        end
     end
 end
