@@ -103,7 +103,7 @@ diffXY(:,2)=-diffXY(:,2);
 
 % Calculate distance
 r = sqrt(sum(power(diffXY,2),2));
-theta = atan(diffXY(:,1)./diffXY(:,2))*90/pi;
+theta = atan(diffXY(:,1)./diffXY(:,2))*180/pi;
 
 if strcmpi(modeFlag,'foreground')
     h = plotPawTrajectory(diffXY, r, theta)
