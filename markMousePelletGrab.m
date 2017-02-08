@@ -70,8 +70,16 @@ set(h2,'Position',[1 187 480 270], 'Toolbar','None', 'Menubar','None');
 % Read first frame 
 frame = readFrame(obj.video);
 oldframe = zeros(size(frame));
-nextframe = zeros(size(frame));
+nextframe = frame;
 frameCount = frameCount+1;
+disp('Mark the pellet in the displayed image');
+h1=imdisplay(frame,h1);
+[position, centroid, img] = imageMark(frame, h1);
+roi='Pellet';
+
+fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
+roiData = [roiData; ...
+    struct('roi',roi,'position', position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
 
 reply = 'y';
 while ~strcmpi(reply,'x')
@@ -82,7 +90,6 @@ while ~strcmpi(reply,'x')
         h2=imdisplay(nextframe,h2);
     else
         nextframe = [];
-        close(h2);
     end
     reply = 'y';
     while ~isempty(reply)
@@ -92,9 +99,8 @@ while ~strcmpi(reply,'x')
         figure(h1);
         reply = input(['Is there anything of interest?\n',...
         '1 => Paw\n',...
-        '2 => Pellet\n',...
-        '3 => Nose\n',...
-        '4 => Other\n',...
+        '2 => Nose\n',...
+        '3 => Other\n',...
         'Next image  - Press Enter\n',...
         'Exit        - Press X/x]    '],'s');
         if isempty(reply)|strcmpi(reply,'x')
@@ -105,10 +111,10 @@ while ~strcmpi(reply,'x')
         switch reply
         case {'1'}
             roi='Paw';
-            actionNum = '';
+            actionNum = '0';
             action = '';
             outcome = '';
-            while isempty(actionNum)
+            while ~isempty(actionNum)
                 actionNum = input(['\nDo you wish to continue to next image [Enter]\n',...
                     'Or\nSpecify the kind of mouse action [Press 1 or 2 or 3] \n',...
                     '1 => Reach\n',...
@@ -122,28 +128,27 @@ while ~strcmpi(reply,'x')
                 case '3'
                     action = 'Retrieve';
                 case ''
-                    actionNum = 'next';
+                    action = '';
                     reply = '';
                 otherwise
-                    actionNum = '';
+                    actionNum = '0';
                     disp('Warning: You have marked an incorrect input. Please try again.')
                 end
-            end
-            [truefalse, menuindex] = ismember(action, {obj.actionFigure.action});
-            if menuindex>0
-                actionOptions = obj.actionFigure(menuindex).type;
-                consequenceOptions = obj.actionFigure(menuindex).consequence;
-                disp(['How would you further specify the action - ', action]);
-                actionType = menuSelect(actionOptions, false, true);
-                disp(['What was the result of the ',action,' action?']);
-                consequence = menuSelect(consequenceOptions, false, true);
-                reply = '';
+            
+                [truefalse, menuindex] = ismember(action, {obj.actionFigure.action});
+                if menuindex>0
+                    actionOptions = obj.actionFigure(menuindex).type;
+                    consequenceOptions = obj.actionFigure(menuindex).consequence;
+                    disp(['How would you further specify the action - ', action]);
+                    actionType = menuSelect(actionOptions, false, true);
+                    disp(['What was the result of the ',action,' action?']);
+                    consequence = menuSelect(consequenceOptions, false, true);
+                    reply = '';
+                end
             end
         case {'2'}
-            roi='Pellet';
-        case {'3'}
             roi='Nose';
-        case {'4'}
+        case {'3'}
             roi = lower(input('What do you wish to mark?    ','s'));
             roi = strrep(roi,' ','');
             savedir = fullfile(obj.imageFolder,roi);
@@ -172,12 +177,15 @@ while ~strcmpi(reply,'x')
         frame = nextframe;
         frameCount = frameCount+1;
     else
-        close(h0);close(h1);
         break;
     end
 end
 tremorFlag = input('Did you notice tremor in the video? [Y | N]     ', 's');
 isTremorCase = lower(tremorFlag)=='y';
+figure(h1);
+disp('Mark the reference for measuring velocity')
+refPosition = getrect;
+refLength = input('Real world distance in cms? ');
 %% TODO Provide support for image files
 % % Create imageDatastore from the raw images
 % rawImageSet = imageDatastore(fpath, 'IncludeSubfolders', false,'LabelSource', 'foldernames');
@@ -193,7 +201,7 @@ isTremorCase = lower(tremorFlag)=='y';
 %     end
 % end
 [matDir,matPrefix]=fileparts(videoFile);
-save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile');
+save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPosition','refLength');
 return;
 
     %% Read input
