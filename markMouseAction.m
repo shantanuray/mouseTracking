@@ -1,5 +1,5 @@
-function [roiData, grabResult, isTremorCase, refPixelLength, videoFile] = markMousePelletGrab(varargin)
-% [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab;
+function [roiData, grabResult, isTremorCase, refPixelLength, videoFile] = markMouseAction(varargin)
+% [roiData, grabResult, isTremorCase, videoFile] = markMouseAction;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
 % The program does not detect paw or pellet automatically but
@@ -35,11 +35,11 @@ function [roiData, grabResult, isTremorCase, refPixelLength, videoFile] = markMo
 %   - isTremorCase:     Was a tremor identified by the observer in the mouse grab
 %                       logical (0,1)
 % Usage:
-% [...] = markMousePelletGrab; 
+% [...] = markMouseAction; 
 %   User will be asked to point the video file
-% [...] = markMousePelletGrab('VideoFile', videoFile);
+% [...] = markMouseAction('VideoFile', videoFile);
 %   Provide video file. obj.standardImageSize assumed to be [64 x 64 pixels]
-% [...] = markMousePelletGrab('VideoFile', 'test.mp4', 'Mode', 'default', StandardImageSize', [64 64]);
+% [...] = markMouseAction('VideoFile', 'test.mp4', 'Mode', 'default', StandardImageSize', [64 64]);
 %   Provide video file and provide obj.standardImageSize and
 %   mode: 
 %   - Default   - Pellet and paw
@@ -47,7 +47,7 @@ function [roiData, grabResult, isTremorCase, refPixelLength, videoFile] = markMo
 %   - All       - Paw, Pellet and nose
 
 %% TODO Provide support for image files
-% [...] = markMousePelletGrab('RawImageFolder', fpath, 'StandardImageSize', standardImageSize);
+% [...] = markMouseAction('RawImageFolder', fpath, 'StandardImageSize', standardImageSize);
 %   Provide path where the image files are stored
 
 p = readInput(varargin);
