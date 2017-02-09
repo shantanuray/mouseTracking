@@ -1,5 +1,5 @@
-function [r,theta,diffXY,grabType,refCentroid,pawCentroid,traceVideoFile] = analyzeMousePelletGrab(pelletPosition, pawPosition, grabResult, videoFile, modeFlag)
-% [r,theta,diffXY,outcome,refCentroid,pawCentroid,traceVideoFile] = analyzeMousePelletGrab(pelletPosition, pawPosition, grabResult, videoFile, modeFlag);
+function [r,theta,diffXY,grabType,refCentroid,pawCentroid,traceVideoFile] = analyzeMousePelletGrab(roiData, grabResult, videoFile, modeFlag)
+% [r,theta,diffXY,outcome,refCentroid,pawCentroid,traceVideoFile] = analyzeMousePelletGrab(roiData, grabResult, videoFile, modeFlag);
 % -------------Outputs --------------
 %   - r             : Absolute distance of paw from pellet
 %   - theta         : Angle of approach of paw from pellet with respect to horizontal axis
@@ -13,15 +13,13 @@ function [r,theta,diffXY,grabType,refCentroid,pawCentroid,traceVideoFile] = anal
 % [r,theta,diffXY,outcome] = analyzeMousePelletGrab;
 % User will be asked to load a previously saved .mat file with the necessary inputs
 %
-% [r,theta,diffXY,outcome] = analyzeMousePelletGrab(pelletPosition, pawPosition, grabResult, videoFile, modeFlag);
+% [r,theta,diffXY,outcome] = analyzeMousePelletGrab(roiData, grabResult, videoFile, modeFlag);
 %
 % -------------- Inputs --------------
 % Provide necessary inputs. Please maintain structure as follows
-%   - pelletPosition:   Position of the target pellet identified 
-%                       at the start of the program
-%                       Structure with fields ('position','centroid',imageFile','frameCount')
-%   - pawPosition:      Position of the paw in every frame
-%                       Structure with fields ('position','centroid','imageFile','frameCount')
+%   - roiData:          Position of the selection by user for paw, pellet, node, etc.  
+%                       Structure with fields ('roi','position','centroid',imageFile','frameCount')
+%                       where roi is one of (paw, pellet, node, ...)
 %   - grabResult:       The outcome of the grab:
 %                       * Overreach
 %                       * Underreach
@@ -39,7 +37,7 @@ if nargin<4
     while isempty(fileName)
         [fileName, pathName] = uigetfile( ...
                {'*.mat','MAT-files (*.mat)'}, ...
-                'Pick the Marked Mouse Pellet Grab file', ...
+                'Pick the Mouse Paw-Grasp raw data file', ...
                 'MultiSelect', 'off');
         load(fullfile(pathName,fileName),'pelletPosition','pawPosition','grabResult','videoFile');
         modeFlag = 'foreground';
@@ -89,10 +87,10 @@ end
 
 %% Start processing
 % Get the centroid and bbox of the pellet
-[refCentroid, refBox] = getBox(pelletPosition);
+[refCentroid, refBox] = getBox(roiData,'Pellet');
 
 % Get the centroid and bbox of the paw
-[pawCentroid, pawBox] = getBox(pawPosition);
+[pawCentroid, pawBox, pawFrames] = getBox(roiData, 'Paw');
 
 % Original axes had top-left corner as (0,0)
 % Change axes so that pellet is reference is at the bottom
@@ -106,7 +104,7 @@ r = sqrt(sum(power(diffXY,2),2));
 theta = atan(diffXY(:,1)./diffXY(:,2))*180/pi;
 
 if strcmpi(modeFlag,'foreground')
-    h = plotPawTrajectory(diffXY, r, theta)
+    h = plotPawTrajectory(diffXY, r, theta);
 end
 
 %% Save video
@@ -117,16 +115,15 @@ vwt     = uint8(zeros(1080,1920,3));
 bbox    = [];
 outcome = {};
 grabType= {};
-for i = 1:pawPosition(end).frameCount
+for i = 1:pawFrames(end)
     % We are using the original video to superimpose to the grab
     % We go through every frame of the original video
     frame = videoReader.step();
     
     % But the marking may not have been done on every frame
     % So we process only if the frame has been marked
-    loc=(i==cat(1,pawPosition.frameCount));
-    if sum(loc) & ~isempty(pawPosition(loc).centroid)
-        disp(i)
+    loc=(i==pawFrames);
+    if sum(loc) & ~isempty(pawCentroid(loc))
         %% Create the atari image
         % Reset the image
         atari = uint8(zeros(1080,1920,3));
@@ -170,7 +167,7 @@ for i = 1:pawPosition(end).frameCount
         if isempty(grabResult)
             match = [];
         else
-            match = pawPosition(loc).frameCount==[grabResult(:).frameCount];
+            match = pawFrames(loc)==[grabResult(:).frameCount];
         end
         if sum(match)
             % if there is a coinciding grab, then mark the outcome
@@ -208,9 +205,33 @@ videoFile=traceVideoFile;
         imgMarked = img(position(2):position(2)+position(4)-1, position(1):position(1)+position(3)-1,:);
     end
 
-    function [centroid, bbox] = getBox(objPosition)
-        offset      = double(cat(1, objPosition.centroid));
-        pos         = double(cat(1, objPosition.position));
+    %% From the marked region of interest data (roiData), retrieve all the centroids and bbox data
+    % as well as corresponding frame info for a given object of interest ('Paw', 'Pellet')
+    function [centroid, bbox, frameCount] = getBox(roiData, objType)
+        % [centroid, bbox, frameCount] = getBox(roiData, objType)
+
+        % Initialize
+        centroid    = [];
+        bbox        = [];
+        frameCount  = [];
+        % Get a list of all the objects that were marked in the video
+        roiMarked   = {roiData.roi}';
+        % Get index of the particular object of interest ('Paw', 'Pellet')
+        objIdx      = strcmpi(objType,roiMarked);
+        if sum(objIdx)==0
+            warning([objType ' not found, Returning empty centroid and bbox']);
+            return
+        end
+        
+        % Retrieve all centroid, bbox, framecount data
+        offset      = double(cat(1, roiData.centroid));
+        pos         = double(cat(1, roiData.position));
+        frameCount  = double(cat(1, roiData.frameCount));
+        % Select only those that belong to the object of interest
+        offset      = offset(objIdx,:);
+        pos         = pos(objIdx,:);
+        frameCount  = frameCount(objIdx,:);
+        % Add relative centroid of the bbox to the absolute location to calculate absolute position of centroid
         centroid    = pos(:,1:2)+offset(1,1:2); % Hack for now. For some reason offset length is coming one less at times   
         bbox        = pos;
     end
