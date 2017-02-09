@@ -219,7 +219,7 @@ save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase
 
 analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s')
 if isempty(analyzeThis)
-    analyzeMousePelletGrab(roiData, grabResult, videoFile, 'foreground');
+    analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
 end
 return;
 
