@@ -64,13 +64,16 @@ frameRate = 4;
 % Init the video reader
 videoReader = vision.VideoFileReader(videoFile);
 
+% Init the foreground detector (mask)
+maskDetector = vision.ForegroundDetector();     % Using default parameters
+
 % Init video writers
 traceVideoFile{1}=fullfile(savedir, [savePrefix,'_Trace.mp4']);
 atariVideoWriter    = vision.VideoFileWriter(traceVideoFile{1}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
 traceVideoFile{2}=fullfile(savedir, [savePrefix,'_VideoWTrace.mp4']);
 vwtVideoWriter     = vision.VideoFileWriter(traceVideoFile{2}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
-% traceVideoFile{3}=fullfile(savedir, [savePrefix,'_Mask.mp4']);
-% maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+traceVideoFile{3}=fullfile(savedir, [savePrefix,'_Mask.mp4']);
+maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
 
 if strcmpi(modeFlag,'foreground')
     %% Init the video players
@@ -81,7 +84,7 @@ if strcmpi(modeFlag,'foreground')
     vwtPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
 
     % Mask Video - Actual marked objects shown as black and white
-    % maskPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+    maskPlayer = vision.VideoPlayer('Position', [740, 20, 700, 400]);
 end
 
 
@@ -109,7 +112,7 @@ end
 
 %% Save video
 % Init the mask and the atari base images
-% mask   = uint8(zeros(1080,1920,3));
+mask   = uint8(zeros(1080,1920,3));
 atari   = uint8(zeros(1080,1920,3));
 vwt     = uint8(zeros(1080,1920,3));
 bbox    = [];
@@ -119,6 +122,19 @@ for i = 1:pawFrames(end)
     % We are using the original video to superimpose to the grab
     % We go through every frame of the original video
     frame = videoReader.step();
+
+    %% Create the mask image
+    % Reset the image
+    mask    = uint8(zeros(1080,1920,3));
+    % Detect mask foreground as binarized image (0,1)
+    maskBin = maskDetector.step(frame);
+    % Apply morphological operations to remove noise and fill in holes.
+    maskBin = imopen(maskBin, strel('rectangle', [3,3]));
+    % Save to mask image in rgb
+    [maskX,maskY]   = find(maskBin);
+    for k = 1:length(maskX)
+        mask(maskX(k),maskY(k),:)=255;  % TODO: Find a better way to do this
+    end
     
     % But the marking may not have been done on every frame
     % So we process only if the frame has been marked
@@ -144,25 +160,11 @@ for i = 1:pawFrames(end)
             vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
         end
 
-        % %% Create the mask image
-        % % Reset the image
-        % mask = uint8(zeros(1080,1920,3));
-        % % Write a white pellet image to a black background
-        % img = imbinarize(rgb2gray(getImageMarked(frame,refBox)));
-        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,1) = 255*(img==1);
-        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,2) = 255*(img==1);
-        % % mask(refBox(2):refBox(2)+refBox(4)-1,refBox(1):refBox(1)+refBox(3)-1,3) = 255*(img==1);
-        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,1)=0;
-        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,2)=255;
-        % mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,3)=0;
-        % % Write the white paw image to the mask
-        % img = imbinarize(rgb2gray(getImageMarked(frame,pawBox(loc,:))));
-        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,1)=255*(img==1);
-        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,2)=255*(img==1);
-        % mask(pawBox(loc,2):pawBox(loc,2)+pawBox(loc,4)-1,pawBox(loc,1):pawBox(loc,1)+pawBox(loc,3)-1,3)=255*(img==1);
-        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,1)=255;
-        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,2)=0;
-        % mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,3)=0;
+        % Mark the paw and pellet in the mask
+        % Write the pellet as green
+        mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+        % Write the paw as red
+        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
 
         if isempty(grabResult)
             match = [];
@@ -179,23 +181,24 @@ for i = 1:pawFrames(end)
         end
         if ~isempty(bbox)
             atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
-            % mask   = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
-            vwt   = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
+            mask    = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
+            vwt     = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
             % frame   = insertObjectAnnotation(frame, 'rectangle', bbox, outcome);
         end
-        if strcmpi(modeFlag,'foreground')
-            atariPlayer.step(atari);
-            % maskPlayer.step(mask);
-            vwtPlayer.step(vwt);
-            pause(1/frameRate);
-        end
-        step(atariVideoWriter, atari);
-        % step(maskVideoWriter, mask);
-        step(vwtVideoWriter, vwt);
     end
+    if strcmpi(modeFlag,'foreground')
+        atariPlayer.step(atari);
+        vwtPlayer.step(vwt);
+        maskPlayer.step(mask);
+        pause(1/frameRate);
+    end
+    step(atariVideoWriter, atari);
+    step(maskVideoWriter, mask);
+    step(vwtVideoWriter, vwt);
+    
 end
 release(atariVideoWriter);
-% release(maskVideoWriter);
+release(maskVideoWriter);
 release(vwtVideoWriter);
 videoFile=traceVideoFile;
 

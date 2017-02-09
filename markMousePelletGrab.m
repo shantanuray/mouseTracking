@@ -1,4 +1,4 @@
-function [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab(varargin)
+function [roiData, grabResult, isTremorCase, refPixelLength, videoFile] = markMousePelletGrab(varargin)
 % [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab;
 % 
 % Guides user to mark the mouse paw as it tries to grab the pellet
@@ -10,28 +10,28 @@ function [roiData, grabResult, isTremorCase, videoFile] = markMousePelletGrab(va
 %       pellet that the mouse was trying to grab in the task. There can 
 %       be only one target pellet for a given video currently
 %       TODO: Handle multiple targets
-%   1a. Identify pellet: In case the location of the pellet changes, user
-%       mark updated position during the program
-%   1b. Identify other regions of interest: User can mark other regions of
-%       interest at any time and provide what is being marked (eg. nose)
-%   2. Identify paw: In every frame, user is asked to identify
+%   2a. Identify regions of interest: User can mark  regions of interest 
+%       at any time and provide what is being marked (eg. nose)
+%   2b. Identify paw: In every frame, user is asked to identify
 %       the position of the paw
-%   3. Identify and classify grab: At each stage the user is also asked if
-%       the mouse grabbed the pellet and if so, classify it as 'Overreach',
-%       'Underreach', or a prehension. If it is a prehension, then user is
-%       further asked to provide a label for type of prehension.
+%   3. Identify and classify action: At each stage the user is also asked if
+%       the mouse grabbed the pellet and if so, classify it as:
+%                       * Action - Reach/ Grasp/ Retrieve
+%                       * Success/Error of the action
+%                       * Consequence of the action
+%                       Structure with fields ('outcome','position','centroid','imageFile','frameCount')
 %   4. Identify if there was tremor: At the end of the analysis before quitting
 %       user is asked if the user saw tremor
 % 
 % Outputs:
 %   - roiData:          Position of the selection by user for paw, pellet, node, etc.  
 %                       Structure with fields ('roi','position','centroid',imageFile','frameCount')
-%                       where roi is one of (paw, pellet, node, ...)
-%   - grabResult:       The outcome of the grab:
-%                       * Overreach
-%                       * Underreach
-%                       * Prehension (user suggested label for prehension)
-%                       Structure with fields ('outcome','position','centroid','imageFile','frameCount')
+%                       where roi is one of (paw, pellet, nose, ...)
+%   - grabResult:       The description of the action. It has three parts
+%                       * action - Reach/ Grasp/ Retrieve
+%                       * Further classification of the success of the action
+%                       * Consequence of the action
+%                       Structure with fields ('action','actionType','consequence','position','centroid','imageFile','frameCount')
 %   - isTremorCase:     Was a tremor identified by the observer in the mouse grab
 %                       logical (0,1)
 % Usage:
@@ -69,9 +69,15 @@ set(h2,'Position',[1 187 480 270], 'Toolbar','None', 'Menubar','None');
 
 % Read first frame 
 frame = readFrame(obj.video);
+% Initialize the previous and next frames
 oldframe = zeros(size(frame));
 nextframe = frame;
+% Update framecount
 frameCount = frameCount+1;
+
+% Mark the pellet
+% Please note pellet is marked only once
+% Assumption: Pellet does not move. If pellet moves, video should not be used for analysis
 disp('Mark the pellet in the displayed image');
 h1=imdisplay(frame,h1);
 [position, centroid, img] = imageMark(frame, h1);
@@ -80,6 +86,16 @@ roi='Pellet';
 fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
 roiData = [roiData; ...
     struct('roi',roi,'position', position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
+
+% Mark the reference for marking velocity
+disp('Mark a rectangle with a known height (reference for measuring velocity')
+refPosition = getrect;
+refLength = input('What is the real world height of this reference? (in cms)    ');
+refPixelLength=refLength/refPosition(1,4);
+
+% Keep saving
+[matDir,matPrefix]=fileparts(videoFile);
+save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
 
 reply = 'y';
 while ~strcmpi(reply,'x')
@@ -165,8 +181,9 @@ while ~strcmpi(reply,'x')
                 struct('roi',roi,'position', position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
             if menuindex>0
                 grabResult = [grabResult; ...
-                struct('action',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+                struct('action',action, 'actionType',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
             end
+            save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
         end
     end
 
@@ -182,10 +199,7 @@ while ~strcmpi(reply,'x')
 end
 tremorFlag = input('Did you notice tremor in the video? [Y | N]     ', 's');
 isTremorCase = lower(tremorFlag)=='y';
-figure(h1);
-disp('Mark the reference for measuring velocity')
-refPosition = getrect;
-refLength = input('Real world distance in cms? ');
+
 %% TODO Provide support for image files
 % % Create imageDatastore from the raw images
 % rawImageSet = imageDatastore(fpath, 'IncludeSubfolders', false,'LabelSource', 'foldernames');
@@ -201,7 +215,12 @@ refLength = input('Real world distance in cms? ');
 %     end
 % end
 [matDir,matPrefix]=fileparts(videoFile);
-save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPosition','refLength');
+save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
+
+analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s')
+if isempty(analyzeThis)
+    analyzeMousePelletGrab(roiData, grabResult, videoFile, 'foreground');
+end
 return;
 
     %% Read input
