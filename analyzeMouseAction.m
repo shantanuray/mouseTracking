@@ -123,6 +123,18 @@ for i = 1:pawFrames(end)
     % We go through every frame of the original video
     frame = videoReader.step();
 
+    %% Create the atari image
+    % Reset the image
+    atari = uint8(zeros(1080,1920,3));
+    % Write the pellet as green
+    atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+    
+    %% Create the video with trace image
+    % Reset the image
+    vwt = frame;
+    % Write the pellet as green
+    vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+    
     %% Create the mask image
     % Reset the image
     mask    = uint8(zeros(1080,1920,3));
@@ -137,22 +149,11 @@ for i = 1:pawFrames(end)
     end
     
     % But the marking may not have been done on every frame
-    % So we process only if the frame has been marked
+    % So we add the paw only if the frame has been marked
     loc=(i==pawFrames);
     if sum(loc) & ~isempty(pawCentroid(loc))
-        %% Create the atari image
-        % Reset the image
-        atari = uint8(zeros(1080,1920,3));
-        % Write the pellet as green
-        atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
         atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
-
-        %% Create the video with trace image
-        % Reset the image
-        vwt = frame;
-        % Write the pellet as green
-        vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
         vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
         % Mark trajectory as yellow
