@@ -58,14 +58,14 @@ h1=figure;
 % Put figure on the top left corner
 % Adjust size for optimal viewing. Remove toolbars
 % Note the original size is 1080 x 1920
-set(h1,'Position',[501 320 768 432], 'Toolbar','None', 'Menubar','None');     
+set(h1,'Position',[606   393   835   464], 'Toolbar','None', 'Menubar','None');     
 frameCount = 0;
 
 h0=figure;
-set(h0,'Position',[1 480 480 270], 'Toolbar','None', 'Menubar','None');   
+set(h0,'Position',[1   587   480   270], 'Toolbar','None', 'Menubar','None');   
 
 h2=figure;
-set(h2,'Position',[1 187 480 270], 'Toolbar','None', 'Menubar','None');
+set(h2,'Position',[1   294   480   270], 'Toolbar','None', 'Menubar','None');
 
 % Read first frame 
 frame = readFrame(obj.video);
@@ -159,6 +159,9 @@ while ~strcmpi(reply,'x')
                     actionType = menuSelect(actionOptions, false, true);
                     disp(['What was the result of the ',action,' action?']);
                     consequence = menuSelect(consequenceOptions, false, true);
+                    fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
+                    grabResult = [grabResult; ...
+                        struct('action',action, 'actionType',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
                     reply = '';
                 end
             end
@@ -179,10 +182,6 @@ while ~strcmpi(reply,'x')
             fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
             roiData = [roiData; ...
                 struct('roi',roi,'position', position,'centroid',centroid,'imageFile',fileName,'frameCount',frameCount)];
-            if menuindex>0
-                grabResult = [grabResult; ...
-                struct('action',action, 'actionType',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
-            end
             save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
         end
     end
@@ -217,10 +216,10 @@ isTremorCase = lower(tremorFlag)=='y';
 [matDir,matPrefix]=fileparts(videoFile);
 save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
 
-analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s')
-if isempty(analyzeThis)
-    analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
-end
+% analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
+% if isempty(analyzeThis)
+%     analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
+% end
 return;
 
     %% Read input
