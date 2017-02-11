@@ -150,14 +150,15 @@ for i = 1:pawFrames(end)
     
     % But the marking may not have been done on every frame
     % So we add the paw only if the frame has been marked
-    loc=(i==pawFrames);
-    if sum(loc) & ~isempty(pawCentroid(loc))
+    loc=find(i>=pawFrames);
+    if ~isempty(loc) & ~isempty(pawCentroid(loc(end)))
+        curidx = loc(end);
         % Write the paw as red
-        atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Write the paw as red
-        vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        vwt(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Mark trajectory as yellow
-        for j = 1:find(loc)
+        for j = loc
             vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
         end
 
@@ -165,20 +166,20 @@ for i = 1:pawFrames(end)
         % Write the pellet as green
         mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
-        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        mask(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
 
         if isempty(grabResult)
-            match = [];
+            match   = [];
         else
-            match = pawFrames(loc)==[grabResult(:).frameCount];
+            match = pawFrames(curidx)==[grabResult(:).frameCount];
         end
         if sum(match)
             % if there is a coinciding grab, then mark the outcome
-            outcome = [outcome;{[grabResult(match).outcome,'-',int2str(grabResult(match).frameCount)]}];
+            outcome = [outcome;{[int2str(find(match)),': ',grabResult(match).action,'-',grabResult(match).actionType]}];
             bbox    = [bbox;[grabResult(match).position]];
-            grabType{loc} = grabResult(match).outcome;
+            grabType{curidx} = grabResult(match).action;
         else
-            grabType{loc} = '';
+            grabType{curidx} = '';
         end
         if ~isempty(bbox)
             atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
