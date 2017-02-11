@@ -148,11 +148,16 @@ for i = 1:pawFrames(end)
         mask(maskX(k),maskY(k),:)=255;  % TODO: Find a better way to do this
     end
     
+    %% Mark the paw in the video
     % But the marking may not have been done on every frame
     % So we add the paw only if the frame has been marked
-    loc=find(i>=pawFrames);
-    if ~isempty(loc) & ~isempty(pawCentroid(loc(end)))
-        curidx = loc(end);
+    loc=find(i>=pawFrames); % Get the index of the saved markings uptil current frame
+    
+    if ~isempty(loc) & ~isempty(pawCentroid(loc(end))) 
+        %% NOTE: Additional Checking For ~isempty(pawCentroid(loc(end)))
+        % This is because at times marking the paw may not have worked and getBox returns empty
+        % See sub-function imageMark in markMouseAction where check for length(centroids)~=2
+        curidx = loc(end); % Get the latest frame wrt index of the saved markings
         % Write the paw as red
         atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Write the paw as red
