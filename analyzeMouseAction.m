@@ -43,6 +43,10 @@ if nargin<4
         modeFlag = 'foreground';
     end
 end
+% Video Sizes
+actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
+displayResizeFactor = 2.5;                                          % For display, resize images
+displayVidSize = [ceil(actualVidSize(1:2)/displayResizeFactor), 3]; % RGB image of 720x1280
 % Size the atari box size (paw and pellet)
 boxSize = 5;
 % Init the pellet atari to green
@@ -78,13 +82,13 @@ maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', fra
 if strcmpi(modeFlag,'foreground')
     %% Init the video players
     % Atari Video - Square boxes to denote objects
-    atariPlayer = vision.VideoPlayer('Position', [20, 400, 700, 400]);
+    atariPlayer = vision.VideoPlayer('Position', [20, 400, displayVidSize(2), displayVidSize(1)]);
 
     % Actual Video with Trace
-    vwtPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+    vwtPlayer = vision.VideoPlayer('Position', [740, 400, displayVidSize(2), displayVidSize(1)]);
 
     % Mask Video - Actual marked objects shown as black and white
-    maskPlayer = vision.VideoPlayer('Position', [740, 20, 700, 400]);
+    maskPlayer = vision.VideoPlayer('Position', [740, 20, displayVidSize(2), displayVidSize(1)]);
 end
 
 
@@ -194,9 +198,9 @@ for i = 1:pawFrames(end)
         end
     end
     if strcmpi(modeFlag,'foreground')
-        atariPlayer.step(atari);
-        vwtPlayer.step(vwt);
-        maskPlayer.step(mask);
+        atariPlayer.step(imresize(atari,1/displayResizeFactor));
+        vwtPlayer.step(imresize(vwt,1/displayResizeFactor));
+        maskPlayer.step(imresize(mask,1/displayResizeFactor));
         pause(1/frameRate);
     end
     step(atariVideoWriter, atari);
