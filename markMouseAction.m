@@ -216,10 +216,10 @@ isTremorCase = lower(tremorFlag)=='y';
 [matDir,matPrefix]=fileparts(videoFile);
 save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
 
-% analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
-% if isempty(analyzeThis)
-%     analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
-% end
+analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
+if isempty(analyzeThis)
+    analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
+end
 return;
 
     %% Read input
