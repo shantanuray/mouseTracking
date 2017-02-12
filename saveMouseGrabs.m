@@ -26,8 +26,8 @@ for i = 1:length(filename)
     traceVideoFile = {};
     refCentroid = [];
     pawCentroid = [];
-    load(fullfile(pathname, filename{i}),'videoFile','pelletPosition', 'pawPosition', 'grabResult');
-    [r,theta,diffXY,grabType,refCentroid,pawCentroid] = analyzeMousePelletGrab(pelletPosition, pawPosition, grabResult, videoFile, modeFlag);
+    load(fullfile(pathname, filename{i}),'videoFile','roiData', 'grabResult');
+    [r,theta,diffXY,grabType,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
 
     indx = find(~strcmp(grabType,''));
     for j = 1:length(indx)
