@@ -43,6 +43,10 @@ if nargin<4
         modeFlag = 'foreground';
     end
 end
+% Video Sizes
+actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
+displayResizeFactor = 2.5;                                          % For display, resize images
+displayVidSize = [ceil(actualVidSize(1:2)/displayResizeFactor), 3]; % RGB image of 720x1280
 % Size the atari box size (paw and pellet)
 boxSize = 5;
 % Init the pellet atari to green
@@ -78,13 +82,13 @@ maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', fra
 if strcmpi(modeFlag,'foreground')
     %% Init the video players
     % Atari Video - Square boxes to denote objects
-    atariPlayer = vision.VideoPlayer('Position', [20, 400, 700, 400]);
+    atariPlayer = vision.VideoPlayer('Position', [20, 400, displayVidSize(2), displayVidSize(1)]);
 
     % Actual Video with Trace
-    vwtPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+    vwtPlayer = vision.VideoPlayer('Position', [740, 400, displayVidSize(2), displayVidSize(1)]);
 
     % Mask Video - Actual marked objects shown as black and white
-    maskPlayer = vision.VideoPlayer('Position', [740, 20, 700, 400]);
+    maskPlayer = vision.VideoPlayer('Position', [740, 20, displayVidSize(2), displayVidSize(1)]);
 end
 
 
@@ -123,6 +127,18 @@ for i = 1:pawFrames(end)
     % We go through every frame of the original video
     frame = videoReader.step();
 
+    %% Create the atari image
+    % Reset the image
+    atari = uint8(zeros(1080,1920,3));
+    % Write the pellet as green
+    atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+    
+    %% Create the video with trace image
+    % Reset the image
+    vwt = frame;
+    % Write the pellet as green
+    vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+    
     %% Create the mask image
     % Reset the image
     mask    = uint8(zeros(1080,1920,3));
@@ -136,27 +152,22 @@ for i = 1:pawFrames(end)
         mask(maskX(k),maskY(k),:)=255;  % TODO: Find a better way to do this
     end
     
+    %% Mark the paw in the video
     % But the marking may not have been done on every frame
-    % So we process only if the frame has been marked
-    loc=(i==pawFrames);
-    if sum(loc) & ~isempty(pawCentroid(loc))
-        %% Create the atari image
-        % Reset the image
-        atari = uint8(zeros(1080,1920,3));
-        % Write the pellet as green
-        atari(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+    % So we add the paw only if the frame has been marked
+    loc=find(i>=pawFrames); % Get the index of the saved markings uptil current frame
+    
+    if ~isempty(loc) & ~isempty(pawCentroid(loc(end))) 
+        %% NOTE: Additional Checking For ~isempty(pawCentroid(loc(end)))
+        % This is because at times marking the paw may not have worked and getBox returns empty
+        % See sub-function imageMark in markMouseAction where check for length(centroids)~=2
+        curidx = loc(end); % Get the latest frame wrt index of the saved markings
         % Write the paw as red
-        atari(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
-
-        %% Create the video with trace image
-        % Reset the image
-        vwt = frame;
-        % Write the pellet as green
-        vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+        atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Write the paw as red
-        vwt(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        vwt(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Mark trajectory as yellow
-        for j = 1:find(loc)
+        for j = loc
             vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
         end
 
@@ -164,20 +175,20 @@ for i = 1:pawFrames(end)
         % Write the pellet as green
         mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
         % Write the paw as red
-        mask(pawCentroid(loc,2)-boxSize:pawCentroid(loc,2)+boxSize,pawCentroid(loc,1)-boxSize:pawCentroid(loc,1)+boxSize,:)=pawBoxColor;
+        mask(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
 
         if isempty(grabResult)
-            match = [];
+            match   = [];
         else
-            match = pawFrames(loc)==[grabResult(:).frameCount];
+            match = pawFrames(curidx)==[grabResult(:).frameCount];
         end
         if sum(match)
             % if there is a coinciding grab, then mark the outcome
-            outcome = [outcome;{[grabResult(match).outcome,'-',int2str(grabResult(match).frameCount)]}];
+            outcome = [outcome;{[int2str(find(match)),': ',grabResult(match).action,'-',grabResult(match).actionType]}];
             bbox    = [bbox;[grabResult(match).position]];
-            grabType{loc} = grabResult(match).outcome;
+            grabType{curidx} = grabResult(match).action;
         else
-            grabType{loc} = '';
+            grabType{curidx} = '';
         end
         if ~isempty(bbox)
             atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
@@ -187,9 +198,9 @@ for i = 1:pawFrames(end)
         end
     end
     if strcmpi(modeFlag,'foreground')
-        atariPlayer.step(atari);
-        vwtPlayer.step(vwt);
-        maskPlayer.step(mask);
+        atariPlayer.step(imresize(atari,1/displayResizeFactor));
+        vwtPlayer.step(imresize(vwt,1/displayResizeFactor));
+        maskPlayer.step(imresize(mask,1/displayResizeFactor));
         pause(1/frameRate);
     end
     step(atariVideoWriter, atari);
