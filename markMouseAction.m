@@ -127,16 +127,28 @@ while ~strcmpi(reply,'x')
         switch reply
         case {'1'}
             roi='Paw';
+            fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
             actionNum = '0';
             action = '';
             outcome = '';
             while ~isempty(actionNum)
                 actionNum = input(['\nDo you wish to continue to next image [Enter]\n',...
                     'Or\nSpecify the kind of mouse action [Press 1 or 2 or 3] \n',...
+                    '0 => Start\n',...
                     '1 => Reach\n',...
                     '2 => Grasp\n',...
                     '3 => Retrieve\n'],'s');
                 switch actionNum
+                case '0'
+                    action = 'Start';
+                    % For special cases of Start, we do not have custom menus for
+                    %   - Action type
+                    %   - Consequence
+                    % Hence, actionType = [], consequence = []
+                    grabResult = [grabResult; ...
+                        struct('action',action, 'actionType',[], 'consequence',[],...
+                            'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+                    reply = '';
                 case '1'
                     action = 'Reach';
                 case '2'
@@ -150,7 +162,9 @@ while ~strcmpi(reply,'x')
                     actionNum = '0';
                     disp('Warning: You have marked an incorrect input. Please try again.')
                 end
-            
+                % For special cases of Reach, Grasp and Retrieve, we have custom menus for
+                %   - Action type (Reach, Grasp, Retrieve type)
+                %   - Consequence
                 [truefalse, menuindex] = ismember(action, {obj.actionFigure.action});
                 if menuindex>0
                     actionOptions = obj.actionFigure(menuindex).type;
@@ -159,7 +173,6 @@ while ~strcmpi(reply,'x')
                     actionType = menuSelect(actionOptions, false, true);
                     disp(['What was the result of the ',action,' action?']);
                     consequence = menuSelect(consequenceOptions, false, true);
-                    fileName = saveImage(img, fullfile(obj.imageFolder, roi), [obj.savePrefix,'_',int2str(frameCount)]);
                     grabResult = [grabResult; ...
                         struct('action',action, 'actionType',actionType, 'consequence',consequence,'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
                     reply = '';
