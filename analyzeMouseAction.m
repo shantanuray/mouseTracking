@@ -1,10 +1,11 @@
-function [r,theta,diffXY,grabType,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag)
+function [r,theta,diffXY,actionSpec,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag)
 % [r,theta,diffXY,outcome,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
 % -------------Outputs --------------
 %   - r             : Absolute distance of paw from pellet
 %   - theta         : Angle of approach of paw from pellet with respect to horizontal axis
 %   - diffXY        : Difference between paw position and pellet position
-%   - grabType      : Outcome for the marked position (empty if mouse was still attempting and did not grab)
+%   - actionSpec    : Outcome for the marked position (empty if mouse was still attempting and did not grab)
+%                     struct('action','actionType','consequence')
 %   - traceVideoFile: Filenames of the output trace videos
 %   - refCentroid   : Absolute pellet center in original video
 %   - pawCentroid   : Absolute paw center in original video
@@ -121,7 +122,7 @@ atari   = uint8(zeros(1080,1920,3));
 vwt     = uint8(zeros(1080,1920,3));
 bbox    = [];
 outcome = {};
-grabType= {};
+actionSpec = {};
 for i = 1:pawFrames(end)
     % We are using the original video to superimpose to the grab
     % We go through every frame of the original video
@@ -151,6 +152,8 @@ for i = 1:pawFrames(end)
     for k = 1:length(maskX)
         mask(maskX(k),maskY(k),:)=255;  % TODO: Find a better way to do this
     end
+    % Write the pellet as green
+    mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
     
     %% Mark the paw in the video
     % But the marking may not have been done on every frame
@@ -161,7 +164,11 @@ for i = 1:pawFrames(end)
         %% NOTE: Additional Checking For ~isempty(pawCentroid(loc(end)))
         % This is because at times marking the paw may not have worked and getBox returns empty
         % See sub-function imageMark in markMouseAction where check for length(centroids)~=2
-        curidx = loc(end); % Get the latest frame wrt index of the saved markings
+
+        % Get the latest frame wrt index of the saved markings
+        % This is  index 'i' if marking has been done for 'i',
+        % else it is the previous frame where marking has been done
+        curidx = loc(end); 
         % Write the paw as red
         atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
         % Write the paw as red
@@ -171,31 +178,36 @@ for i = 1:pawFrames(end)
             vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
         end
 
-        % Mark the paw and pellet in the mask
-        % Write the pellet as green
-        mask(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
+        % Mark the paw in the mask
         % Write the paw as red
         mask(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
-
         if isempty(grabResult)
             match   = [];
         else
-            match = pawFrames(curidx)==[grabResult(:).frameCount];
+            match = find(i ==[grabResult(:).frameCount]);
         end
-        if sum(match)
-            % if there is a coinciding grab, then mark the outcome
-            outcome = [outcome;{[int2str(find(match)),': ',grabResult(match).action,'-',grabResult(match).actionType]}];
-            bbox    = [bbox;[grabResult(match).position]];
-            grabType{curidx} = grabResult(match).action;
-        else
-            grabType{curidx} = '';
+        if ~isempty(match)
+            % if there is a coinciding marked action (reach, grasp, retrieve), then mark the action & action outcome
+            % If there are multiple actions marked for the same frame, in the video show only the first one marking
+            outcome = [outcome;{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
+            bbox    = [bbox;[grabResult(match(1)).position]];
+            % If there are multiple actions marked for the same frame, save all actions
+            actionCell = struct2cell(grabResult(match));
+            % Only need to save the first 3 elements of the cell
+            % Note: Strucure is important. Assumption action, actionType,
+            % consequence are the first 3 elements of the structure
+            % TODO: Remove dependence on fixed structure
+            actionCell = actionCell(1:3,:);
+            actionSpec{curidx,1} = actionCell;
+         else
+            actionSpec{curidx,1} = {};
         end
-        if ~isempty(bbox)
-            atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
-            mask    = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
-            vwt     = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
-            % frame   = insertObjectAnnotation(frame, 'rectangle', bbox, outcome);
-        end
+    end
+    if ~isempty(bbox)
+        % Mark the actions on the videos
+        atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
+        mask    = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
+        vwt     = insertObjectAnnotation(vwt, 'rectangle', bbox, outcome);
     end
     if strcmpi(modeFlag,'foreground')
         atariPlayer.step(imresize(atari,1/displayResizeFactor));
