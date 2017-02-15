@@ -40,7 +40,7 @@ if nargin<4
                {'*.mat','MAT-files (*.mat)'}, ...
                 'Pick the Mouse Paw-Grasp raw data file', ...
                 'MultiSelect', 'off');
-        load(fullfile(pathName,fileName),'pelletPosition','pawPosition','grabResult','videoFile');
+        load(fullfile(pathName,fileName),'roiData','grabResult','videoFile');
         modeFlag = 'foreground';
     end
 end
@@ -189,8 +189,11 @@ for i = 1:pawFrames(end)
         if ~isempty(match)
             % if there is a coinciding marked action (reach, grasp, retrieve), then mark the action & action outcome
             % If there are multiple actions marked for the same frame, in the video show only the first one marking
-            outcome = [outcome;{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
-            bbox    = [bbox;[grabResult(match(1)).position]];
+%             outcome = [outcome;{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
+%             bbox    = [bbox;[grabResult(match(1)).position]];
+            outcome = [{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
+            bbox    = [[grabResult(match(1)).position]];
+
             % If there are multiple actions marked for the same frame, save all actions
             actionCell = struct2cell(grabResult(match));
             % Only need to save the first 3 elements of the cell
