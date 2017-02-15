@@ -34,7 +34,7 @@ function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseA
 %%%%% See markMouseAction.m for further reference %%%%
 
 
-% Initialize
+% Initialize inputs
 if nargin<4
     fileName='';
     while isempty(fileName)
@@ -46,6 +46,12 @@ if nargin<4
         modeFlag = 'foreground';
     end
 end
+% Initialize Outputs
+r           = [];
+theta       = [];
+diffXY      = [];
+refCentroid = [];
+pawCentroid = [];
 videoFile = '';
 if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Video Sizes
@@ -99,6 +105,10 @@ end
 
 
 %% Start processing
+if isempty(grabResult)
+    warning('Processing file with no grabs. Returning empty!')
+    return
+end
 
 % Get the centroid and bbox of the pellet
 [refCentroid, refBox] = getBox(roiData,'Pellet');
@@ -265,11 +275,11 @@ end
         pos         = double(cat(1, roiData.position));
         frameCount  = double(cat(1, roiData.frameCount));
         % Select only those that belong to the object of interest
-        offset      = offset(objIdx,:);
+        offset      = offset(1,:); % Hack for now. For some reason offset length is coming one less at times   
         pos         = pos(objIdx,:);
         frameCount  = frameCount(objIdx,:);
         % Add relative centroid of the bbox to the absolute location to calculate absolute position of centroid
-        centroid    = pos(:,1:2)+offset(1,1:2); % Hack for now. For some reason offset length is coming one less at times   
+        centroid    = pos(:,1:2)+offset(1,1:2); 
         bbox        = pos;
     end
 end
