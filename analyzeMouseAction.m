@@ -52,7 +52,7 @@ theta       = [];
 diffXY      = [];
 refCentroid = [];
 pawCentroid = [];
-videoFile = '';
+traceVideoFile = '';
 if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Video Sizes
     actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
