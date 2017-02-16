@@ -32,6 +32,9 @@ for i = 1:length(filename)
     pawCentroid = [];
     load(fullfile(pathname, filename{i}),'videoFile','roiData', 'grabResult','refPixelLength');
     [r,theta,diffXY,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
+    if isempty(r)
+        continue
+    end
     % Convert from number of pixels to distance (refPixelLength = reference length/pixels)
     r           = r*refPixelLength;
     diffXY      = diffXY*refPixelLength;
@@ -61,6 +64,8 @@ for i = 1:length(filename)
         %     'Marking Y Absolute'
         % };
         if strcmpi(roiData(j).roi,'Nose') % For nose markings
+            %Hack about centroids not getting captured
+            roiData(j).centroid = int16([32 32]);
             noseCentroid    = double((roiData(j).position(1:2)+roiData(j).centroid(1:2)))*refPixelLength;
             noseDiffXY      = noseCentroid-refCentroid;
             % Adjust y-axis so that pellet reference is bottom
