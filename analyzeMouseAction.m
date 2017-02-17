@@ -77,6 +77,23 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     [savedir, savePrefix]=fileparts(videoFile);
 
     % Init the video reader
+    % Sometimes the video may have been moved to a different location
+    % If the videoFile doesn't exist, ask user to provide location
+    if isempty(dir(videoFile))
+        disp(['Warning: Could not find the video file - ' videoFile]);
+        disp('Please provide appropriate video file ...')
+        [fileName, pathName] = uigetfile( ...
+               {'*.mp4'}, ...
+                'Pick the Mouse Paw-Grasp video file', ...
+                'MultiSelect', 'off');
+        videoFile = fullfile(pathName, fileName);
+    end
+    % Check if appropriate video file has been provided
+    [pathName,vidName,vidExt] = fileparts(videoFile);
+    if isempty(vidExt) | ~strcmpi(vidExt, '.mp4') | ~strcmpi(vidExt, '.avi')|~strcmpi(vidExt, '.mov')|~strcmpi(vidExt, '.mts')
+        error('You have not provided appropriate video file. Please locate the original video and try again');
+    end
+
     videoReader = vision.VideoFileReader(videoFile);
 
     % Init the foreground detector (mask)
