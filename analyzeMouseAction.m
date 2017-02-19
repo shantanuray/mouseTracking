@@ -90,7 +90,7 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     end
     % Check if appropriate video file has been provided
     [pathName,vidName,vidExt] = fileparts(videoFile);
-    if isempty(vidExt) | ~strcmpi(vidExt, '.mp4') | ~strcmpi(vidExt, '.avi')|~strcmpi(vidExt, '.mov')|~strcmpi(vidExt, '.mts')
+    if isempty(vidExt) | ~(strcmpi(vidExt, '.mp4') | strcmpi(vidExt, '.avi')| strcmpi(vidExt, '.mov')| strcmpi(vidExt, '.mts'))
         error('You have not provided appropriate video file. Please locate the original video and try again');
     end
 
