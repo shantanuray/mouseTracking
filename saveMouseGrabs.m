@@ -1,11 +1,22 @@
-%% Run analysis and save mouse grab data as excel xls
+function data = saveMouseGrabs
+%% Run analysis and save mouse grab data as a list that can saved to an excel sheet
+% data = saveMouseGrabs
+
 
 disp('Select the .mat files to be analyzed. You can select multiple files.');
-[filename, pathname, filterindex] = uigetfile( ...
+[filename, pathname] = uigetfile( ...
        {'*.mat','MAT-files (*.mat)'}, ...
         'Pick .mat file to analyze', ...
         'MultiSelect', 'on');
-
+if iscell(filename)
+    filecount = length(filename);
+    matfiles = filename;
+elseif ischar(filename)
+    filecount = 1;
+    matfiles{1} = filename;
+else
+    error('File not found')
+end
 data = {'videoFile',...
     'Frame Count',...
     'Marking',...
@@ -22,7 +33,8 @@ data = {'videoFile',...
     'Marking Y Absolute'
 };
 modeFlag = 'background';
-for i = 1:length(filename)
+
+for i = 1:filecount
     r = [];
     theta = [];
     diffXY = [];
@@ -30,7 +42,7 @@ for i = 1:length(filename)
     traceVideoFile = {};
     refCentroid = [];
     pawCentroid = [];
-    load(fullfile(pathname, filename{i}),'videoFile','roiData', 'grabResult','refPixelLength');
+    load(fullfile(pathname, matfiles{i}),'videoFile','roiData', 'grabResult','refPixelLength');
     [r,theta,diffXY,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
     [pathName,vidName,vidExt] = fileparts(videoFile);
     % For windows
