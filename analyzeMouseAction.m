@@ -11,10 +11,8 @@ function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseA
 %   - pawCentroid   : Absolute paw center in original video
 %
 % -------------- Usage --------------
-% [r,theta,diffXY] = analyzeMouseAction;
-% User will be asked to load a previously saved .mat file with the necessary inputs
 %
-% [r,theta,diffXY] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
+% [...] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
 %
 % -------------- Inputs --------------
 % Provide necessary inputs. Please maintain structure as follows
@@ -33,19 +31,9 @@ function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseA
 %
 %%%%% See markMouseAction.m for further reference %%%%
 
+% Initialize settings
+bbox_flag = false;  % No box around the marked positions; No labels
 
-% Initialize inputs
-if nargin<4
-    fileName='';
-    while isempty(fileName)
-        [fileName, pathName] = uigetfile( ...
-               {'*.mat','MAT-files (*.mat)'}, ...
-                'Pick the Mouse Paw-Grasp raw data file', ...
-                'MultiSelect', 'off');
-        load(fullfile(pathName,fileName),'roiData','grabResult','videoFile');
-        modeFlag = 'foreground';
-    end
-end
 % Initialize Outputs
 r           = [];
 theta       = [];
@@ -78,15 +66,9 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
 
     % Init the video reader
     % Sometimes the video may have been moved to a different location
-    % If the videoFile doesn't exist, ask user to provide location
+    % If the videoFile doesn't exist, return error
     if isempty(dir(videoFile))
-        disp(['Warning: Could not find the video file - ' videoFile]);
-        disp('Please provide appropriate video file ...')
-        [fileName, pathName] = uigetfile( ...
-               {'*.mp4'}, ...
-                'Pick the Mouse Paw-Grasp video file', ...
-                'MultiSelect', 'off');
-        videoFile = fullfile(pathName, fileName);
+        error(['Warning: Could not find the video file - ' videoFile]);
     end
     % Check if appropriate video file has been provided
     [pathName,vidName,vidExt] = fileparts(videoFile);
@@ -202,15 +184,15 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
             % Get the latest frame wrt index of the saved markings
             % This is  index 'i' if marking has been done for 'i',
             % else it is the previous frame where marking has been done
-            curidx = loc(end); 
+            curidx = loc(end);
             % Write the paw as red
             atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
             % Write the paw as red
             vwt(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
-            % Mark trajectory as yellow
-            for j = loc
-                vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
-            end
+            % TODO Mark trajectory as yellow
+            % for j = loc
+            %     vwt(pawCentroid(j,2)-2:pawCentroid(j,2)+2,pawCentroid(j,1)-2:pawCentroid(j,1)+2,:)=traceBoxColor;
+            % end
 
             % Mark the paw in the mask
             % Write the paw as red
@@ -240,7 +222,7 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
              %    actionSpec{curidx,1} = {};
             end
         end
-        if ~isempty(bbox)
+        if ~isempty(bbox) & bbox_flag
             % Mark the actions on the videos
             atari   = insertObjectAnnotation(atari, 'rectangle', bbox, outcome);
             mask    = insertObjectAnnotation(mask, 'rectangle', bbox, outcome);
