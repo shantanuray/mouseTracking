@@ -33,6 +33,11 @@ for i = 1:length(filename)
     load(fullfile(pathname, filename{i}),'videoFile','roiData', 'grabResult','refPixelLength');
     [r,theta,diffXY,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
     [pathName,vidName,vidExt] = fileparts(videoFile);
+    % For windows
+    seploc=findstr(vidName,'\');
+    if ~isempty(seploc)
+        vidName = vidName(seploc(end)+1:end);
+    end
     if isempty(r)
         continue
     end
