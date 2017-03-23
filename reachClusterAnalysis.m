@@ -22,7 +22,7 @@ hold on
 plot(centroids(:,1),centroids(:,2),'kx','MarkerSize',15,'LineWidth',3);
 
 plotDecisionBoundary(X, clusteridx);
-legend('Control', 'Ablated', 'Cluster Centroid','Cluster Separator')
+legend({'Control', 'Ablated', 'Centroid','Separator'},'FontName','Calibri','FontSize',12,'Location','northwest')
 ylim([0,1])
 xlim([-1,1])
 hold off
