@@ -1,5 +1,5 @@
 function h = plotPawTrajectory(diffXY, r, theta)
-
+% h = plotPawTrajectory(diffXY, r, theta)
 % Plot r and theta
 h = figure;
 set(h,'Position',[1 1 900 300]);
