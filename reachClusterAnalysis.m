@@ -13,18 +13,19 @@ X = data(:, [1, 2]); y = data(:, 3);
 figure
 plotData(X, y);
 
+
 % k-means cluster analysis
 rng(1);
 opts = statset('Display','final');
 [clusteridx, centroids] = kmeans(X,2,'Distance','cityblock','Replicates',5,'Options',opts);
 
 hold on
-plot(centroids(:,1),centroids(:,2),'kx','MarkerSize',15,'LineWidth',3);
+% plot(centroids(:,1),centroids(:,2),'kx','MarkerSize',15,'LineWidth',3);
 
 plotDecisionBoundary(X, clusteridx);
-legend({'Control', 'Ablated', 'Centroid','Separator'},'FontName','Calibri','FontSize',12,'Location','northwest')
-ylim([0,1])
-xlim([-1,1])
+legend({'Control', 'Ablated', 'Separator'},'FontName','Calibri','FontSize',12,'Location','northwest')
+xlim([-1,1.2])
+ylim([0,1.2])
 hold off
 
 
