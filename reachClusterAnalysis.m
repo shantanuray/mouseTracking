@@ -24,9 +24,22 @@ hold on
 
 plotDecisionBoundary(X, clusteridx);
 legend({'Control', 'Ablated', 'Separator'},'FontName','Calibri','FontSize',12,'Location','northwest')
-xlim([-1,1.2])
-ylim([0,1.2])
+xrange = [-1,1.2];
+yrange = [0,1.2];
+xlim(xrange)
+ylim(yrange)
 hold off
+
+ablated = data(data(:,3)==1,1:2);
+control = data(data(:,3)==0,1:2);
+num_bins = 6;
+num_colors = 0;
+
+figure
+plotDensityContour(ablated, num_bins, xrange, yrange, num_colors)
+
+figure
+plotDensityContour(control, num_bins, xrange, yrange, num_colors)
 
 
     function plotData(X, y)
@@ -64,5 +77,23 @@ hold off
         scoreGrid = reshape(score(:,1),size(X1,1),size(X2,2));
         v = [1,1];
         contour(X1,X2,scoreGrid,v,'--ks');
+     end
+
+     function plotDensityContour(X, num_bins, xrange, yrange, num_colors)
+        [bin_count,bin_center] = hist3([X(:,2), X(:,1)],[num_bins, num_bins]);
+        bin_center{2} = [xrange(1), bin_center{2}, xrange(2)];
+        bin_center{1} = [yrange(1), bin_center{1}, yrange(2)];
+        bin_count = [zeros(size(bin_count,1),1),bin_count,  zeros(size(bin_count,1),1)];
+        bin_count = [zeros(1,size(bin_count,2));bin_count; zeros(1,size(bin_count,2))];
+        if num_colors == 0
+            contourf(bin_center{2},bin_center{1},bin_count,'linestyle','none')
+        else
+            contourf(bin_center{2},bin_center{1},bin_count,num_colors,'linestyle','none')
+        end
+        % cmap = colormap;
+        % cmap(1,:) = ones(1,3);
+        colorbar
+        xlim(xrange)
+        ylim(yrange)
      end
 end
