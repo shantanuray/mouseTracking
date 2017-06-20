@@ -212,7 +212,8 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
                 % If there are multiple actions marked for the same frame, in the video show only the first one marking
                 % outcome = [outcome;{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
                 % bbox    = [bbox;[grabResult(match(1)).position]];
-                outcome = [{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
+                % outcome = [{[int2str(match(1)),': ',grabResult(match(1)).action,'-',grabResult(match(1)).actionType]}];
+                outcome = [{[int2str(match(1)),': ',grabResult(match(1)).action]}];
                 bbox    = [[grabResult(match(1)).position]];
 
              %    % If there are multiple actions marked for the same frame, save all actions
