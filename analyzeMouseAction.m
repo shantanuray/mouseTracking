@@ -82,12 +82,14 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     maskDetector = vision.ForegroundDetector();     % Using default parameters
 
     % Init video writers
-    traceVideoFile{1}=fullfile(savedir, [savePrefix,'_Trace.mp4']);
-    atariVideoWriter    = vision.VideoFileWriter(traceVideoFile{1}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
-    traceVideoFile{2}=fullfile(savedir, [savePrefix,'_VideoWTrace.mp4']);
-    vwtVideoWriter     = vision.VideoFileWriter(traceVideoFile{2}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
-    traceVideoFile{3}=fullfile(savedir, [savePrefix,'_Mask.mp4']);
-    maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+    traceVideoFile{1}=fullfile(savedir, [savePrefix,'_ContinuousTrace.mp4']);
+    traceVideoWriter    = vision.VideoFileWriter(traceVideoFile{1}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+    traceVideoFile{2}=fullfile(savedir, [savePrefix,'_Trace.mp4']);
+    atariVideoWriter    = vision.VideoFileWriter(traceVideoFile{2}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+    traceVideoFile{3}=fullfile(savedir, [savePrefix,'_VideoWTrace.mp4']);
+    vwtVideoWriter     = vision.VideoFileWriter(traceVideoFile{3}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
+    traceVideoFile{4}=fullfile(savedir, [savePrefix,'_Mask.mp4']);
+    maskVideoWriter     = vision.VideoFileWriter(traceVideoFile{4}, 'FrameRate', frameRate, 'FileFormat', 'MPEG4');
 end
 
 if strcmpi(modeFlag,'foreground')
@@ -135,6 +137,7 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
     % Init the mask and the atari base images
     mask   = uint8(zeros(1080,1920,3));
     atari   = uint8(zeros(1080,1920,3));
+    ctrace  = uint8(zeros(1080,1920,3));
     vwt     = uint8(zeros(1080,1920,3));
     bbox    = [];
     outcome = {};
@@ -187,6 +190,8 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
             curidx = loc(end);
             % Write the paw as red
             atari(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
+            % Write the trace as yellow
+            ctrace(pawCentroid(curidx,2)-traceSize:pawCentroid(curidx,2)+traceSize,pawCentroid(curidx,1)-traceSize:pawCentroid(curidx,1)+traceSize,:)=traceBoxColor;
             % Write the paw as red
             vwt(pawCentroid(curidx,2)-boxSize:pawCentroid(curidx,2)+boxSize,pawCentroid(curidx,1)-boxSize:pawCentroid(curidx,1)+boxSize,:)=pawBoxColor;
             % TODO Mark trajectory as yellow
@@ -235,11 +240,13 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
             pause(1/frameRate);
         end
         step(atariVideoWriter, atari);
+        step(traceVideoWriter, ctrace);
         step(maskVideoWriter, mask);
         step(vwtVideoWriter, vwt);
 
     end
     release(atariVideoWriter);
+    release(traceVideoWriter);
     release(maskVideoWriter);
     release(vwtVideoWriter);
     videoFile=traceVideoFile;
