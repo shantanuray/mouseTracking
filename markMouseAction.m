@@ -374,26 +374,33 @@ return;
         %% Binarize the marked image
         imgBin = imbinarize(rgb2gray(imgMarked));
 
-        %% Extract the centroid (if marked properly, there should be only one centroid,
-        % i.e. [x y] coordinates of the centroid of the marked image
-        % regionprops returns a structure as imageProp.Centroid relative to the marked image
-        imageProp = regionprops(imgBin,'centroid'); 
-        centroids = int16(cat(1, imageProp.Centroid)); % Convert the structure to an array of int
-        % If more than one centroid is detected, choose the centroid that is closest to the 
-        % center of the select image [size(imgBin)/2]
-        centroids = centroids((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2 == min((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2), :);
-        % When there is a single centroid, above function returns a row vector as required
-        % When there multiple centroids, even though the above returns the correct centroid location,
-        %   it returns it as a column vector. Convert by default to row vector as required
-        % TODO Check why sometimes length(centroids)~=2. For now, continue
-        if length(centroids)~=2
-            disp(imageProp);
-            disp(size(imgBin,1));
-            centroid=[];
-            imgMatch=[];
-            return;
-        end
-        centroid=reshape(centroids,[1 2]); 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%TODO: Refraining from using regionpros because the images were not uniformally lit
+        %       Single image was showing up as multiple objects with different centroids.
+        %       For now, going with center as the centroid
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % %% Extract the centroid (if marked properly, there should be only one centroid,
+        % % i.e. [x y] coordinates of the centroid of the marked image
+        % % regionprops returns a structure as imageProp.Centroid relative to the marked image
+        % imageProp = regionprops(imgBin,'centroid'); 
+        % centroids = int16(cat(1, imageProp.Centroid)); % Convert the structure to an array of int
+        % % If more than one centroid is detected, choose the centroid that is closest to the 
+        % % center of the select image [size(imgBin)/2]
+        % centroids = centroids((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2 == min((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2), :);
+        % % When there is a single centroid, above function returns a row vector as required
+        % % When there multiple centroids, even though the above returns the correct centroid location,
+        % %   it returns it as a column vector. Convert by default to row vector as required
+        % % TODO Check why sometimes length(centroids)~=2. For now, continue
+        % if length(centroids)~=2
+        %     disp(imageProp);
+        %     disp(size(imgBin,1));
+        %     centroid=[];
+        %     imgMatch=[];
+        %     return;
+        % end
+        % centroid=reshape(centroids,[1 2]); 
+
+        centroid = int16(size(imgBin)/2);
 
         %% Calculated position of region wrt original image
         % 1. Calculate location of centroid wrt original image
