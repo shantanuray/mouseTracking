@@ -134,14 +134,17 @@ while ~strcmpi(reply,'x')
             while ~isempty(actionNum)
                 actionNum = input(['\nDo you wish to continue to next image [Enter]\n',...
                     'Or\nSpecify the kind of mouse action [Press 1 or 2 or 3] \n',...
-                    '0 => Start\n',...
-                    '1 => Reach\n',...
-                    '2 => Grasp\n',...
-                    '3 => Retrieve\n'],'s');
+                    '0 => Initialize\n',...
+                    '1 => Cross Doorway\n',...
+                    '2 => Reach\n',...
+                    '3 => Grasp\n',...
+                    '4 => Retrieve\n',...
+                    '5 => Light On\n',...
+                    '6 => Light Off\n'],'s');
                 switch actionNum
                 case '0'
-                    action = 'Start';
-                    % For special cases of Start, we do not have custom menus for
+                    action = 'Initialize';
+                    % For special cases of Initialize, we do not have custom menus for
                     %   - Action type
                     %   - Consequence
                     % Hence, actionType = [], consequence = []
@@ -150,11 +153,41 @@ while ~strcmpi(reply,'x')
                             'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
                     reply = '';
                 case '1'
-                    action = 'Reach';
+                    action = 'Cross Doorway';
+                    % For special cases of Initialize, we do not have custom menus for
+                    %   - Action type
+                    %   - Consequence
+                    % Hence, actionType = [], consequence = []
+                    grabResult = [grabResult; ...
+                        struct('action',action, 'actionType',[], 'consequence',[],...
+                            'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+                    reply = '';
                 case '2'
-                    action = 'Grasp';
+                    action = 'Reach';
                 case '3'
+                    action = 'Grasp';
+                case '4'
                     action = 'Retrieve';
+                case '5'
+                    action = 'Light On';
+                    % For special cases of Light On, we do not have custom menus for
+                    %   - Action type
+                    %   - Consequence
+                    % Hence, actionType = [], consequence = []
+                    grabResult = [grabResult; ...
+                        struct('action',action, 'actionType',[], 'consequence',[],...
+                            'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+                    reply = '';
+                case '6'
+                    action = 'Light Off';
+                    % For special cases of Light Off, we do not have custom menus for
+                    %   - Action type
+                    %   - Consequence
+                    % Hence, actionType = [], consequence = []
+                    grabResult = [grabResult; ...
+                        struct('action',action, 'actionType',[], 'consequence',[],...
+                            'position',position,'centroid', centroid,'imageFile',fileName,'frameCount',frameCount)];
+                    reply = '';
                 case ''
                     action = '';
                     reply = '';
