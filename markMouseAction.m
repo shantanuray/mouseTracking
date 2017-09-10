@@ -260,6 +260,13 @@ end
 %     end
 % end
 [matDir,matPrefix]=fileparts(videoFile);
+newMatDir = input(['Saving MAT file in "', matDir, '" Okay? [Enter - Yes | Any key - No]'], 's');
+if ~isempty(newMatDir)
+    newMatDir = uigetdir(matDir, 'Pick a Directory');
+end
+if isempty(newMatDir) | newMatDir == 0
+    newMatDir = matDir;
+end
 save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
 
 analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
