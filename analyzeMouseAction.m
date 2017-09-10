@@ -64,6 +64,14 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Location of saved video
     [savedir, savePrefix]=fileparts(videoFile);
 
+    newsavedir = input(['Saving MAT file in "', savedir, '", Okay? [Enter - Yes | Any key - No]'], 's');
+    if ~isempty(newsavedir)
+        newsavedir = uigetdir(savedir, 'Pick a Directory');
+    end
+    if ~(isempty(newsavedir) | newsavedir == 0)
+        savedir = newsavedir;
+    end
+
     % Init the video reader
     % Sometimes the video may have been moved to a different location
     % If the videoFile doesn't exist, return error
