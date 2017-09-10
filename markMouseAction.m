@@ -267,6 +267,7 @@ end
 if isempty(newMatDir) | newMatDir == 0
     newMatDir = matDir;
 end
+matDir = newMatDir;
 save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase', 'videoFile','refPixelLength');
 
 analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
