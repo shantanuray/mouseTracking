@@ -381,8 +381,7 @@ return;
         centroids = int16(cat(1, imageProp.Centroid)); % Convert the structure to an array of int
         % If more than one centroid is detected, choose the centroid that is closest to the 
         % center of the select image [size(imgBin)/2]
-        centroids = centroids(abs([size(imgBin,1)/2-centroids(:,1), size(imgBin,2)/2-centroids(:,2)])==...
-          min(abs([size(imgBin,1)/2-centroids(:,1), size(imgBin,2)/2-centroids(:,2)]),[],1));
+        centroids = centroids((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2 == min((size(imgBin,1)/2-centroids(:,1)).^2+(size(imgBin,2)/2-centroids(:,2)).^2), :);
         % When there is a single centroid, above function returns a row vector as required
         % When there multiple centroids, even though the above returns the correct centroid location,
         %   it returns it as a column vector. Convert by default to row vector as required
