@@ -260,7 +260,7 @@ end
 %     end
 % end
 [matDir,matPrefix]=fileparts(videoFile);
-newMatDir = input(['Saving MAT file in "', matDir, '", Okay? [Enter - Yes | Any key - No]'], 's');
+newMatDir = input(['Saving MAT file in "', matDir, '", Okay? [Enter - Yes | Any key - No]  '], 's');
 if ~isempty(newMatDir)
     newMatDir = uigetdir(matDir, 'Pick a Directory');
 end

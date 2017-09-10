@@ -64,7 +64,7 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Location of saved video
     [savedir, savePrefix]=fileparts(videoFile);
 
-    newsavedir = input(['Saving MAT file in "', savedir, '", Okay? [Enter - Yes | Any key - No]'], 's');
+    newsavedir = input(['Saving video/trace files in "', savedir, '", Okay? [Enter - Yes | Any key - No]  '], 's');
     if ~isempty(newsavedir)
         newsavedir = uigetdir(savedir, 'Pick a Directory');
     end
