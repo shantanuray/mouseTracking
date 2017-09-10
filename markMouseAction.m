@@ -242,8 +242,8 @@ while ~strcmpi(reply,'x')
         break;
     end
 end
-tremorFlag = input('Did you notice tremor in the video? [Y | N]     ', 's');
-isTremorCase = lower(tremorFlag)=='y';
+% tremorFlag = input('Did you notice tremor in the video? [Y | N]     ', 's');
+% isTremorCase = lower(tremorFlag)=='y';
 
 %% TODO Provide support for image files
 % % Create imageDatastore from the raw images
