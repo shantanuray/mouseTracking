@@ -257,9 +257,9 @@ return;
     function [obj, roiData, grabResult, isTremorCase, videoFile] = initializeSystem(p)
 
         % Get folder where the training images are stored
-        disp('Select video for marking mouse grabs (*.mp4, *.avi)');
+        disp('Select video for marking mouse grabs (*.mp4, *.avi, *.mov)');
         if isempty(p.Results.VideoFile)
-            [fileName, fpath] = uigetfile({'*.mp4;*.avi', 'Select video for marking mouse grabs (*.mp4, *.avi)'});
+            [fileName, fpath] = uigetfile({'*.mp4;*.avi;*.mov', 'Select video for marking mouse grabs (*.mp4, *.avi, *.mov)'});
             videoFile = fullfile(fpath, fileName);
             [~, obj.savePrefix] = fileparts(fileName);
         else
