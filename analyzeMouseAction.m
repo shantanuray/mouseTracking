@@ -1,4 +1,4 @@
-function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag)
+function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag, writeFrameCount)
 % [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
 % -------------Outputs --------------
 %   - r             : Absolute distance of paw from pellet
@@ -60,6 +60,17 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     traceBoxColor = zeros(traceSize*2+1,traceSize*2+1,3);
     traceBoxColor(:,:,1:2) = 255; % Yellow
     frameRate = 4;
+    % Init config for writing frame number to video
+    frameCountWriteFlag = writeFrameCount;
+    frameCountWriteFontSize = 32;
+    frameCountWriteFont = 'Arial';
+    frameCountWriteCharWidth = ceil(5*32/18);
+    frameCountWriteBoxHorzPadding = ceil(7*32/18);
+    frameCountWriteBoxVertPadding = 1;
+    frameCountWriteCharHeight = frameCountWriteFontSize+2;
+    frameCountWritePadding = 5;
+    frameCountWriteTextColor = 'black';
+    frameCountWriteBoxColor = 'white';
 
     % Location of saved video
     [savedir, savePrefix]=fileparts(videoFile);
@@ -164,6 +175,9 @@ if strcmpi(modeFlag,'foreground') | strcmpi(modeFlag,'background-video')
         %% Create the video with trace image
         % Reset the image
         vwt = frame;
+        if frameCountWriteFlag
+            vwt = insertText(vwt, [ceil(size(vwt,2)-(frameCountWriteCharWidth*ceil(log10(i))+frameCountWriteBoxHorzPadding)-frameCountWritePadding) (frameCountWriteFontSize+frameCountWriteBoxVertPadding+frameCountWritePadding)], i, 'Font', frameCountWriteFont, 'FontSize', frameCountWriteFontSize, 'AnchorPoint', 'Center', 'TextColor', frameCountWriteTextColor, 'BoxColor',frameCountWriteBoxColor);
+        end
         % Write the pellet as green
         vwt(refCentroid(1,2)-boxSize:refCentroid(1,2)+boxSize,refCentroid(1,1)-boxSize:refCentroid(1,1)+boxSize,:)=pelletBoxColor;
 

@@ -79,7 +79,7 @@ frameCount = frameCount+1;
 % Please note pellet is marked only once
 % Assumption: Pellet does not move. If pellet moves, video should not be used for analysis
 disp('Mark the pellet in the displayed image');
-h1=imdisplay(frame,h1);
+h1=imdisplay(frame, h1, frameCount);
 [position, centroid, img] = imageMark(frame, h1);
 roi='Pellet';
 
@@ -99,11 +99,11 @@ save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase
 
 reply = 'y';
 while ~strcmpi(reply,'x')
-    h1=imdisplay(frame,h1);
+    h1=imdisplay(frame,h1, frameCount);
     if hasFrame(obj.video)
         % Read frame
         nextframe = readFrame(obj.video);
-        h2=imdisplay(nextframe,h2);
+        h2=imdisplay(nextframe,h2,frameCount+1);
     else
         nextframe = [];
     end
@@ -233,7 +233,7 @@ while ~strcmpi(reply,'x')
     end
 
     oldframe = frame;
-    h0=imdisplay(oldframe,h0);
+    h0=imdisplay(oldframe,h0,frameCount);
 
     if ~isempty(nextframe)
         frame = nextframe;
@@ -272,7 +272,7 @@ save(fullfile(matDir,[matPrefix,'.mat']), 'roiData', 'grabResult', 'isTremorCase
 
 analyzeThis = input('Do you wish to see if the mouse actions were marked correctly? [Yes - Enter]    ','s');
 if isempty(analyzeThis)
-    analyzeMouseAction(roiData, grabResult, videoFile, 'foreground');
+    analyzeMouseAction(roiData, grabResult, videoFile, 'foreground', true);
 end
 return;
 
@@ -432,7 +432,18 @@ return;
         imgMarked = img(position(2):position(2)+position(4)-1, position(1):position(1)+position(3)-1,:);
     end
 
-    function h = imdisplay(img,h)
+    function h = imdisplay(img,h, frameCount)
+        if nargin<3 frameCount=1;end
+        frameCountWriteFlag = true;
+        frameCountWriteFontSize = 32;
+        frameCountWriteFont = 'Arial';
+        frameCountWriteCharWidth = ceil(5*32/18);
+        frameCountWriteBoxHorzPadding = ceil(7*32/18);
+        frameCountWriteBoxVertPadding = 1;
+        frameCountWriteCharHeight = frameCountWriteFontSize+2;
+        frameCountWritePadding = 5;
+        frameCountWriteTextColor = 'black';
+        frameCountWriteBoxColor = 'white';
         if ~ishandle(h)
             % If the figure was closed, reopen it
             h = figure;
@@ -442,6 +453,13 @@ return;
             set(h,'Position',[0 350 800 450], 'Toolbar','None', 'Menubar','None');  
         else
             figure(h);
+        end
+        if frameCountWriteFlag
+            img = insertText(img,...
+                [ceil(size(img,2)-(frameCountWriteFontSize*0.7*floor(log10(frameCount)+1))-frameCountWritePadding) (frameCountWriteFontSize+frameCountWriteBoxVertPadding+frameCountWritePadding)],...
+                frameCount,...
+                'Font', frameCountWriteFont, 'FontSize', frameCountWriteFontSize, 'AnchorPoint', 'Center',...
+                'TextColor', frameCountWriteTextColor, 'BoxColor',frameCountWriteBoxColor);
         end
         % Show the image and fit it to the figure window
         imshow(img,'InitialMagnification','fit','Border','tight');
