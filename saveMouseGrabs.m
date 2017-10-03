@@ -43,7 +43,7 @@ for i = 1:filecount
     refCentroid = [];
     pawCentroid = [];
     load(fullfile(pathname, matfiles{i}),'videoFile','roiData', 'grabResult','refPixelLength');
-    [r,theta,diffXY,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
+    [r,theta,diffXY,refCentroid,pawCentroid] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag, true);
     [pathName,vidName,vidExt] = fileparts(videoFile);
     % For windows
     seploc=findstr(vidName,'\');

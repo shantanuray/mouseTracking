@@ -67,4 +67,4 @@ if isempty(vidExt) | ~(strcmpi(vidExt, '.mp4') | strcmpi(vidExt, '.avi')| strcmp
     error('You have not provided appropriate video file. Please locate the original video and try again');
 end
 
-[r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
+[r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag, true);
