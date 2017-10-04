@@ -39,9 +39,9 @@ for i=1:length(sorted_names)
     if ~isdir(sorted_names{i})
         [path mname mext] = fileparts(sorted_names{i});
         
-        if (strcmp(mext,'.mat'))
+        if (strcmpi(mext,'.mat'))
             [path vname vext] = fileparts(sorted_names{i+1});
-            if (strcmp(vext,'.mp4')|strcmp(vext,'.mov')) & strcmp(mname,vname))
+            if (strcmpi(vext,'.mp4')|strcmpi(vext,'.mov')|strcmpi(vext,'.avi')|strcmpi(vext,'.mts')) & strcmpi(mname,vname))
                 filecount = filecount+1;
                 fileindices = [fileindices i];
             end
