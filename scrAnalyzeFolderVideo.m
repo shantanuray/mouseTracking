@@ -41,7 +41,7 @@ for i=1:length(sorted_names)
         
         if (strcmp(mext,'.mat'))
             [path vname vext] = fileparts(sorted_names{i+1});
-            if (strcmp(vext,'.mp4') & strcmp(mname,vname))
+            if (strcmp(vext,'.mp4')|strcmp(vext,'.mov')) & strcmp(mname,vname))
                 filecount = filecount+1;
                 fileindices = [fileindices i];
             end
