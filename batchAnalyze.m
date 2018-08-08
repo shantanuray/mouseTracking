@@ -93,13 +93,13 @@ for i = 1:filecount
     actionSpec  = cell(numFrames, 3);
     if length(reachingEvents) > 0 % Annotations have events marked
         annotatedFrames = unique([reachingEvents.frameCount]);
-        r           = reshape(r*refPixelLength, length(roiFrames), 1);
-        theta       = reshape(theta, length(roiFrames), 1);
-        diffXY      = reshape(diffXY*refPixelLength, length(roiFrames), 2);
+        r           = r';
+        theta       = theta';
+        diffXY      = diffXY'*refPixelLength;
         pos         = intersect(roiData.frameCount, roiFrames', 'rows');
-        xyCal(pos, 1) = num2cell(r);
-        xyCal(pos, 2) = num2cell(theta);
-        xyCal(pos, 3:4) = num2cell(diffXY);
+        xyCal(roiFrames, 1) = num2cell(r);
+        xyCal(roiFrames, 2) = num2cell(theta);
+        xyCal(roiFrames, 3:4) = num2cell(diffXY);
         for actionCount = annotatedFrames
             actionSpec{actionCount, 1} = sprintf('%s ', reachingEvents(find([reachingEvents.frameCount]==actionCount)).action);
             actionSpec{actionCount, 2} = sprintf('%s ', reachingEvents(find([reachingEvents.frameCount]==actionCount)).actionType);
