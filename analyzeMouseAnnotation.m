@@ -162,9 +162,20 @@ refXYPosition= refXYPosition(1:2, 1);
 % Original axes had top-left corner as (0,0)
 % Change axes so that ref is reference is at the bottom
 % Get diffXYerence between reference (ref) and roi
+
+if isempty(roiXYPosition)
+    warning(['No markings in ', videoFile, '. Returning empty'])
+    r = [];
+    diffXY = [];
+    theta = []; 
+    roiFrames = [];
+    traceVideoFile = '';
+    return;
+end
+
 diffXY = roiXYPosition(1:2, :) - refXYPosition;
 % Adjust y-axis so that ref reference is bottom
-diffXY(:,2) = -diffXY(:,2);
+diffXY(2,:) = -diffXY(2,:);
 
 % Calculate distance
 r = sqrt(sum(power(diffXY,2),1));
@@ -174,7 +185,7 @@ if strcmpi(modeFlag, 'foreground')
     h = plotPawTrajectory(diffXY, r, theta);
 end
 
-if strcmpi(modeFlag, 'foreground') | strcmpi(modeFlag, 'background-video')
+if strcmpi(modeFlag, 'foreground') || strcmpi(modeFlag, 'background-video')
     %% Save video
     % mask   = uint8(zeros(1080,1920,3));
     bbox    = [];
