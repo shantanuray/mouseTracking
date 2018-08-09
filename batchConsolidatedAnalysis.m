@@ -72,7 +72,7 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
     referenceEvent = 'Reach';
     referenceFrameCount = sort(frameCount(find(strcmpi(action, referenceEvent))));
     if i == 1
-      eventData(1,:) = [{'Index','Initialize','Cross Doorway','Reach','Grasp','Retrieve',...
+      eventData(1,:) = [{'Trial','Index','Initialize','Cross Doorway','Reach','Grasp','Retrieve',...
       'Laser Light On','Laser Light Off',...
       'LED Counter Frame #','LED Counter #',...
       'Relative Distance','Relative Angle of Approach','Relative X','Relative Y'},...
@@ -81,6 +81,7 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
 
     for i = 1:length(referenceFrameCount)
       reachCounter = reachCounter+1;
+      eventData{reachCounter+1,find(strcmpi(eventData(1,:),'Trial'))} = trialName;
       eventData{reachCounter+1,find(strcmpi(eventData(1,:),'Index'))} = reachCounter;
       eventData{reachCounter+1,find(strcmpi(eventData(1,:),'Reach'))} = referenceFrameCount(i);
       if ~isempty(laserlightonFrameCount)
@@ -118,6 +119,6 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
 
     end
   end
+  eventData = cell2table(eventData);
+  writetable(eventData, fullfile(pathname, ['consolidateAnnotations_',datestr(now,30),'.xlsx']),'FileType','spreadsheet', 'WriteVariableNames',true)
 end
-    
-
