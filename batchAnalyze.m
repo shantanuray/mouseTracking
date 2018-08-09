@@ -109,3 +109,5 @@ for i = 1:filecount
 
     data = [data; cat(2, repmat({trialName}, numFrames, 1), num2cell(roiData.frameCount), xyCal, actionSpec, num2cell(roiData.marking'))];
 end
+data = cell2table(data);
+writetable(data, fullfile(pathname, ['rawAnnotations_',datestr(now,30),'.xlsx']),'FileType','spreadsheet', 'WriteVariableNames',true)
