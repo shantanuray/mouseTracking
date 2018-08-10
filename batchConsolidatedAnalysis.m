@@ -74,7 +74,7 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
     if i == 1
       eventData(1,:) = [{'Trial','Index','Initialize','Cross Doorway','Reach','Grasp','Retrieve',...
       'Laser Light On','Laser Light Off',...
-      'LED Counter Frame #','LED Counter #',...
+      'LED Counter Frame','LED Counter',...
       'Relative Distance','Relative Angle of Approach','Relative X','Relative Y'},...
       reshape([strcat(roiData.roi, {' - Absolute X'}); strcat(roiData.roi, {' - Absolute Y'}); strcat(roiData.roi, {' - Likelihood'})], 1, 18)];
     end
@@ -91,8 +91,8 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
         eventData{reachCounter+1,find(strcmpi(eventData(1,:),'Laser Light Off'))} = laserlightoffFrameCount(1);
       end
       if ~isempty(ledcounterFrameCount)
-        eventData{reachCounter+1,find(strcmpi(eventData(1,:),'LED Counter Frame #'))} = ledcounterFrameCount(1);
-        eventData{reachCounter+1,find(strcmpi(eventData(1,:),'LED Counter #'))} = ledcounter(1);
+        eventData{reachCounter+1,find(strcmpi(eventData(1,:),'LED Counter Frame'))} = ledcounterFrameCount(1);
+        eventData{reachCounter+1,find(strcmpi(eventData(1,:),'LED Counter'))} = ledcounter(1);
       end
       tmpFrameCount = initializeFrameCount(initializeFrameCount<=referenceFrameCount(i));
       if ~isempty(tmpFrameCount)
