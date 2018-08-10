@@ -7,7 +7,7 @@ h(1) = figure;
 
 for j = 1:size(init_reach_x, 1)
   [f,gof,out] = fit(-X(init_reach_x(j, 1):init_reach_x(j, 2), 1), X(init_reach_x(j, 1):init_reach_x(j, 2), 2), 'smoothingspline', 'SmoothingParam', 0.9995);
-  plot(f, 'k-', -X(init_reach_x(j, 1):init_reach_x(j, 2), 1), X(init_reach_x(j, 1):init_reach_x(j, 2), 2), 'w.');
+  plot(f, 'K-', -X(init_reach_x(j, 1):init_reach_x(j, 2), 1), X(init_reach_x(j, 1):init_reach_x(j, 2), 2), 'W');
   legend off
   hold on
 end
