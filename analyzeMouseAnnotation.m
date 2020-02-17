@@ -54,7 +54,8 @@ roiXYPosition = [];
 traceVideoFile = '';
 if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Video Sizes
-    actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
+    % actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
+    actualVidSize = [600 800 3];                                      % RGB image of 1080x1920
     displayResizeFactor = 2.5;                                          % For display, resize images
     displayVidSize = [ceil(actualVidSize(1:2)/displayResizeFactor), 3]; % RGB image of 720x1280
     
@@ -90,7 +91,7 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     end
     % Check if appropriate video file has been provided
     [pathName,vidName,vidExt] = fileparts(videoFile);
-    if isempty(vidExt) | ~(strcmpi(vidExt, '.mp4') | strcmpi(vidExt, '.avi')| strcmpi(vidExt, '.mov')| strcmpi(vidExt, '.mts'))
+    if isempty(vidExt) | ~(strcmpi(vidExt, '.mp4') | strcmpi(vidExt, '.avi')| strcmpi(vidExt, '.mov')| strcmpi(vidExt, '.mts') | strcmpi(vidExt, '.m4v'))
         error('You have not provided appropriate video file. Please locate the original video and try again');
     end
 
@@ -154,7 +155,7 @@ end
 
 % Get the centroid and bbox of the ref
 refXYPosition = getBox(roiData, refTargetName);
-refXYPosition= refXYPosition(1:2, 1);
+refXYPosition= refXYPosition(1:2, 1)/1.663;
 
 % Get the centroid and bbox of the roi
 [roiXYPosition, roiFrames] = getBox(roiData, refBodyPartName);
@@ -206,7 +207,7 @@ if strcmpi(modeFlag, 'foreground') || strcmpi(modeFlag, 'background-video')
         end
 
         %% Get the markings of the roi in the video
-        marking = roiData.marking(:, i); % (x,y, likelihood) for all markings as a single row
+        marking = roiData.marking(:, i)/1.663; % (x,y, likelihood) for all markings as a single row
         if traceFlag %% Create the trace image
             % Reset the image (atari video only has the current frame marking)
             atari = uint8(zeros(1080,1920,3));
@@ -226,6 +227,7 @@ if strcmpi(modeFlag, 'foreground') || strcmpi(modeFlag, 'background-video')
             % Render the roi markings
             vwt = renderMarking(vwt, marking, roiData.roi);
             vwt = renderText(vwt, num2str(i));
+            vwt = vwt(1: size(frame, 1), 1: size(frame, 2), 1: size(frame, 3));
         end
 
         if ctraceFlag; ctrace = renderMarking(ctrace, marking, roiData.roi); end;

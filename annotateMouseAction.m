@@ -133,12 +133,15 @@ if strcmpi(p.Results.Mode, 'Manual')
         refLength = input('What is the real world height of this reference? (in cms)    ');
         refPixelLength=refLength/refPosition(1,4);
     end
+% elseif isempty(pelletMarked)
+%     pelletMarking = [10, 10, 0.05];
+%     refPixelLength = 1;
+%     roiData.roi = ['pellet', roiData.roi];
+%     boxColors = distinguishable_colors(length(roiData.roi));
+%     roiData.marking = [repmat(pelletMarking', 1, size(roiData.marking, 2)); roiData.marking];
 else
-    pelletMarking = [10, 10, 0.05];
     refPixelLength = 1;
-    roiData.roi = ['pellet', roiData.roi];
     boxColors = distinguishable_colors(length(roiData.roi));
-    roiData.marking = [repmat(pelletMarking', 1, size(roiData.marking, 2)); roiData.marking];
 end
 
 
