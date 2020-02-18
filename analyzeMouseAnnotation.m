@@ -43,7 +43,7 @@ function [r, theta, diffXY, refXYPosition, roiXYPosition, roiFrames, traceVideoF
 
 % Initialize settings
 p = readInput(varargin);
-[refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag] = parseInput(p.Results);
+[refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize] = parseInput(p.Results);
 
 % Initialize Outputs
 r           = [];
@@ -55,7 +55,6 @@ traceVideoFile = '';
 if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % Video Sizes
     % actualVidSize = [1080 1920 3];                                      % RGB image of 1080x1920
-    actualVidSize = [600 800 3];                                      % RGB image of 1080x1920
     displayResizeFactor = 2.5;                                          % For display, resize images
     displayVidSize = [ceil(actualVidSize(1:2)/displayResizeFactor), 3]; % RGB image of 720x1280
     
@@ -155,7 +154,7 @@ end
 
 % Get the centroid and bbox of the ref
 refXYPosition = getBox(roiData, refTargetName);
-refXYPosition= refXYPosition(1:2, 1)/1.663;
+refXYPosition= refXYPosition(1:2, 1);
 
 % Get the centroid and bbox of the roi
 [roiXYPosition, roiFrames] = getBox(roiData, refBodyPartName);
@@ -207,7 +206,7 @@ if strcmpi(modeFlag, 'foreground') || strcmpi(modeFlag, 'background-video')
         end
 
         %% Get the markings of the roi in the video
-        marking = roiData.marking(:, i)/1.663; % (x,y, likelihood) for all markings as a single row
+        marking = roiData.marking(:, i); % (x,y, likelihood) for all markings as a single row
         if traceFlag %% Create the trace image
             % Reset the image (atari video only has the current frame marking)
             atari = uint8(zeros(1080,1920,3));
@@ -298,6 +297,7 @@ return;
     %% Render all the markings
     function frame = renderMarking(frameUnmarked, marking, roi)
         frame = frameUnmarked;
+        frameSize = size(frame);
         % Please note minLikelihood, boxColors, boxSize are being accessed from calling function
         % Render the marking as a box of size boxSize x boxSize in frame with color chosen from bodyBoxColors
         % TODO Take care of points on the edge where boxSize will be outside the edge of image
@@ -306,8 +306,8 @@ return;
                 % boxPaint is a matrix of size (boxSize x boxSize) with value = (rgb) from boxColors 
                 %   (eg. 5x5x3 if boxSize = 5)
                 boxPaint = permute(repmat(repmat(uint8(255*boxColors(bp, :)), boxSize, 1), 1, 1, boxSize), [3, 1, 2]);
-                frame(int16(marking((bp-1)*3+2)-(boxSize-1)/2:marking((bp-1)*3+2)+(boxSize-1)/2), ...
-                    int16(marking((bp-1)*3+1)-(boxSize-1)/2:marking((bp-1)*3+1)+(boxSize-1)/2), :) =...
+                frame(int16(max(marking((bp-1)*3+2)-(boxSize-1)/2, 1):max(marking((bp-1)*3+2)-(boxSize-1)/2, 1)+(boxSize-1)), ...
+                    int16(max(marking((bp-1)*3+1)-(boxSize-1)/2, 1):max(marking((bp-1)*3+1)-(boxSize-1)/2, 1)+(boxSize-1)), :) =...
                 boxPaint;
             end
         end
@@ -380,6 +380,7 @@ return;
         %   - BoxLabel          Default - false
         %   - ModeFlag:         Default - 'foreground'
         %   - WriteFrameCount:  Default true
+        %   - ActualVidSize:    Default - [1080 1920 3]
         p = inputParser;
         defaultRefTargetName = 'pellet';
         defaultRefBodyPartName = 'hand';
@@ -387,6 +388,7 @@ return;
         defaultBoxLabel = false;
         defaultModeFlag = 'foreground';
         defaultWriteFrameCount = true;
+        defaultActualVidSize = [1080 1920 3];
         
         addParameter(p,'RefTargetName',defaultRefTargetName, @ischar);
         addParameter(p,'RefBodyPartName',defaultRefBodyPartName, @ischar);
@@ -394,10 +396,11 @@ return;
         addParameter(p,'BoxLabel',defaultBoxLabel, @islogical);
         addParameter(p,'ModeFlag',defaultModeFlag, @ischar);
         addParameter(p,'WriteFrameCount',defaultWriteFrameCount, @islogical);
+        addParameter(p,'ActualVidSize',defaultActualVidSize, @isnumeric);
         parse(p, input{:});
     end
 
-    function [refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag] = parseInput(p)
+    function [refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize] = parseInput(p)
         refTargetName = p.RefTargetName;
         refBodyPartName = p.RefBodyPartName;
         videoMux = num2cell(p.VideoMux);
@@ -405,5 +408,6 @@ return;
         bboxFlag = p.BoxLabel;
         modeFlag = p.ModeFlag;
         frameCountWriteFlag = p.WriteFrameCount;
+        actualVidSize = p.ActualVidSize;
     end
 end

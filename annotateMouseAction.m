@@ -417,14 +417,16 @@ return;
     %% Initialize and setup system objects and outputs
     function [obj, roiData, reachingEvents, isTremorCase, videoFile] = initializeSystem(videoFile, markingFile, p)
 
-        switch lower(p.Results.VideoAngle)
-            case 'left'
-                markingROILocation = [320, 160; 600, 600];
-            case 'right'
-                markingROILocation = [120, 160; 400, 400];
-            otherwise
-                markingROILocation = p.Results.MarkingROILocation;
-        end
+        if isempty(p.Results.MarkingROILocation)
+            switch lower(p.Results.VideoAngle)
+                case 'left'
+                    markingROILocation = [320, 160; 600, 600];
+                case 'right'
+                    markingROILocation = [120, 160; 400, 400];
+            end
+        else
+            markingROILocation = p.Results.MarkingROILocation;
+        end;
 
         % Get folder where the mouse reaching task images are stored
         if isempty(videoFile)
