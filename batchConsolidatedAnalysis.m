@@ -18,12 +18,12 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
   else
       error('File not found')
   end
-
   refTargetName = 'pellet';
   refBodyPartName = 'hand';
   modeFlag = 'background';
   writeFrameCount = true;
   reachCounter = 0;
+  actualVidSize = [600 800 3];
 
   for i = 1:filecount
     r = [];
@@ -38,7 +38,8 @@ function eventData = batchConsolidatedAnalysis(filename, pathname)
     [r, theta, diffXY, refXYPosition, roiXYPosition, roiFrames] = analyzeMouseAnnotation(roiData, reachingEvents, videoFile,...
         'RefTargetName', refTargetName, 'RefBodyPartName', refBodyPartName,... 
         'ModeFlag', modeFlag,... 
-        'VideoMux', [false false false true], 'WriteFrameCount', writeFrameCount);
+        'VideoMux', [false false false true], 'WriteFrameCount', writeFrameCount,...
+        'ActualVidSize', actualVidSize);
     
     [pathName, trialName, vidExt] = fileparts(videoFile);
     % For windows
