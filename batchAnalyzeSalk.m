@@ -19,13 +19,13 @@ else
     error('File not found')
 end
 
+bodyParts = {'hand', 'Finger1', 'Finger2', 'pellet'}
 refTargetName = 'pellet';
 refBodyPartName = 'hand';
 modeFlag = 'background-video';
 writeFrameCount = true;
 videoAngle = '';
-% roiSalk = [0, 277; 640, 624];
-roiSalk = [0, 0; 800, 600];
+roi_coord = [0, 0; 800, 600];
 actualVidSize = [600 800 3];
 
 for i = 1:filecount
@@ -56,9 +56,10 @@ for i = 1:filecount
         videoFile = fullfile(pathname, [videoPrefix, '.m4v']);
         [roiData, reachingEvents, isTremorCase, refPixelLength] = ...
               annotateMouseAction(videoFile, fullfile(pathname, markingFile{i}),...
-                      'BodyParts', {'hand', 'Finger1', 'Finger2', 'pellet'},...
+                      'BodyParts', bodyParts,...
+                      'RefTargetName', refTargetName, 'RefBodyPartName', refBodyPartName,... 
                       'VideoAngle', videoAngle,...
-                      'MarkingROILocation', roiSalk,...
+                      'MarkingROILocation', roi_coord,...
                       'Mode', 'Auto');
     else
        load(fullfile(pathname, markingFileName), 'videoFile', 'roiData', 'reachingEvents', 'refPixelLength'); 
