@@ -19,7 +19,7 @@ else
     error('File not found')
 end
 
-bodyParts = {'hand', 'Finger1', 'Finger2', 'pellet'}
+bodyParts = {'hand', 'Finger1', 'Finger2', 'pellet'};
 refTargetName = 'pellet';
 refBodyPartName = 'hand';
 modeFlag = 'background-video';
