@@ -222,8 +222,8 @@ while ~strcmpi(reply,'x') & strcmpi(p.Results.Mode, 'Manual')
             % Call imageMark for the given frame to mark the object
             actionNum = '0';
             menustr = sprintf('\n%s\n', 'Which body part marking would you like to change?');
-            for p = 1:length(roiData.roi)
-                menustr = strcat(menustr, sprintf('\n%d => %s\n\r', p, roiData.roi{p}));
+            for roi_p = 1:length(roiData.roi)
+                menustr = strcat(menustr, sprintf('\n%d => %s\n\r', roi_p, roiData.roi{roi_p}));
             end;
             menustr = strcat(menustr, sprintf('\n%s\n', 'Enter  => Return to main menu [Press Enter]'));
             while ~isempty(actionNum)
