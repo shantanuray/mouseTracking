@@ -383,7 +383,7 @@ end
 save(fullfile(matDir, [matPrefix,'.mat']), 'roiData', 'reachingEvents', 'isTremorCase', 'videoFile','refPixelLength');
 if isempty(analyzeThis)
     analyzeMouseAnnotation(roiData, reachingEvents, videoFile,... 
-        'RefTargetName', roiData.refTargetName, 'RefBodyPartName', roiData.bodyPartName,... 
+        'RefTargetName', roiData.refTargetName, 'RefBodyPartName', roiData.refBodyPartName,... 
         'ModeFlag', 'foreground', 'WriteFrameCount', true);
 end
 
@@ -394,7 +394,7 @@ return;
         p = inputParser;
         defaultBodyParts = {'hand', 'wrist', 'nose', 'littlefinger', 'index'};
         defaultRefTargetName = 'pellet';
-        defaultBodyPartName = 'hand';
+        defaultRefBodyPartName = 'hand';
         defaultMarkingH5Location = '/df_with_missing';
         defaultMarkingH5DataSet = '/table';
         defaultVideoAngle = '';
@@ -405,7 +405,7 @@ return;
         
         addParameter(p,'BodyParts',defaultBodyParts, @iscell);
         addParameter(p,'RefTargetName',defaultRefTargetName, @ischar);
-        addParameter(p,'BodyPartName',defaultBodyPartName, @ischar);
+        addParameter(p,'RefBodyPartName',defaultRefBodyPartName, @ischar);
         addParameter(p,'MarkingH5Location',defaultMarkingH5Location, @ischar);
         addParameter(p,'MarkingH5DataSet',defaultMarkingH5DataSet, @ischar);
         addParameter(p,'VideoAngle',defaultVideoAngle, @ischar);
@@ -452,7 +452,7 @@ return;
 %         roiData = struct([]);
         roiData.roi = p.Results.BodyParts;
         roiData.refTargetName = p.Results.RefTargetName;
-        roiData.bodyPartName = p.Results.BodyPartName;
+        roiData.refBodyPartName = p.Results.RefBodyPartName;
         roiData.minimumLikelihood = p.Results.MinimumLikelihood;
         % Read the body part markings from h5 file or mat file
         if isempty(markingFile)
