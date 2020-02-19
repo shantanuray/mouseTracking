@@ -1,3 +1,4 @@
+"""Deprecated. Do not use."""
 function [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag, writeFrameCount)
 % [r,theta,diffXY,refCentroid,pawCentroid,traceVideoFile] = analyzeMouseAction(roiData, grabResult, videoFile, modeFlag);
 % -------------Outputs --------------
