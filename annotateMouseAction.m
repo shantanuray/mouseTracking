@@ -221,16 +221,14 @@ while ~strcmpi(reply,'x') & strcmpi(p.Results.Mode, 'Manual')
         case {'1'}
             % Call imageMark for the given frame to mark the object
             actionNum = '0';
+            menustr = sprintf('\n%s\n', 'Which body part marking would you like to change?');
+            for p = 1:length(roiData.roi)
+                menustr = strcat(menustr, sprintf('\n%d => %s\n\r', p, roiData.roi{p}));
+            end;
+            menustr = strcat(menustr, sprintf('\n%s\n', 'Enter  => Return to main menu [Press Enter]'));
             while ~isempty(actionNum)
                 % TODO Initialize menu dynamically based on marked body parts
-                actionNum = input(['\nWhich body part marking would you like to change?\n',...
-                    '1 => Pellet\n',...
-                    '2 => Hand\n',...
-                    '3 => Wrist\n',...
-                    '4 => Nose\n',...
-                    '5 => Middle Finder\n',...
-                    '6 => Index\n',...
-                    'Enter  => Return to main menu [Press Enter]  \n'],'s');
+                actionNum = input(menustr,'s');
                 actionNum = str2num(actionNum);
                 if ~isempty(actionNum) & actionNum > 0 & actionNum <= length(roiData.roi)
                     disp(['Mark the ', roiData.roi{actionNum}, ' in the displayed image']);
@@ -385,7 +383,7 @@ end
 save(fullfile(matDir, [matPrefix,'.mat']), 'roiData', 'reachingEvents', 'isTremorCase', 'videoFile','refPixelLength');
 if isempty(analyzeThis)
     analyzeMouseAnnotation(roiData, reachingEvents, videoFile,... 
-        'RefTargetName', 'pellet', 'RefBodyPartName', 'hand',... 
+        'RefTargetName', roiData.refTargetName, 'RefBodyPartName', roiData.bodyPartName,... 
         'ModeFlag', 'foreground', 'WriteFrameCount', true);
 end
 
@@ -395,6 +393,8 @@ return;
     function p = readInput(input)
         p = inputParser;
         defaultBodyParts = {'hand', 'wrist', 'nose', 'littlefinger', 'index'};
+        defaultRefTargetName = 'pellet';
+        defaultBodyPartName = 'hand';
         defaultMarkingH5Location = '/df_with_missing';
         defaultMarkingH5DataSet = '/table';
         defaultVideoAngle = '';
@@ -404,6 +404,8 @@ return;
         defaultMode = 'Manual'; % or 'Auto'
         
         addParameter(p,'BodyParts',defaultBodyParts, @iscell);
+        addParameter(p,'RefTargetName',defaultRefTargetName, @ischar);
+        addParameter(p,'BodyPartName',defaultBodyPartName, @ischar);
         addParameter(p,'MarkingH5Location',defaultMarkingH5Location, @ischar);
         addParameter(p,'MarkingH5DataSet',defaultMarkingH5DataSet, @ischar);
         addParameter(p,'VideoAngle',defaultVideoAngle, @ischar);
@@ -449,6 +451,8 @@ return;
         % Obtain the body parts that were marked
 %         roiData = struct([]);
         roiData.roi = p.Results.BodyParts;
+        roiData.refTargetName = p.Results.RefTargetName;
+        roiData.bodyPartName = p.Results.BodyPartName;
         roiData.minimumLikelihood = p.Results.MinimumLikelihood;
         % Read the body part markings from h5 file or mat file
         if isempty(markingFile)
