@@ -1,4 +1,4 @@
-function data = batchAnalyze(filename, pathname)
+function data = batchAnalyzeSalk(filename, pathname)
 %% Run analysis and save mouse grab data as a list that can saved to an excel sheet
 % data = batchAnalyze(filename, pathname);
 
@@ -19,11 +19,14 @@ else
     error('File not found')
 end
 
+bodyParts = {'hand', 'Finger1', 'Finger2', 'pellet'}
 refTargetName = 'pellet';
 refBodyPartName = 'hand';
-modeFlag = 'background';
+modeFlag = 'background-video';
 writeFrameCount = true;
 videoAngle = '';
+roi_coord = [0, 0; 800, 600];
+actualVidSize = [600 800 3];
 
 for i = 1:filecount
     r = [];
@@ -50,11 +53,13 @@ for i = 1:filecount
             end
         end
         videoPrefix =  markingFileName(1:strfind(markingFileName, 'DeepCut')-1);
-        videoFile = fullfile(pathname, [videoPrefix, '.mov']);
+        videoFile = fullfile(pathname, [videoPrefix, '.m4v']);
         [roiData, reachingEvents, isTremorCase, refPixelLength] = ...
               annotateMouseAction(videoFile, fullfile(pathname, markingFile{i}),...
-                      'BodyParts', {'hand', 'wrist', 'nose', 'littlefinger', 'index'},...
+                      'BodyParts', bodyParts,...
+                      'RefTargetName', refTargetName, 'RefBodyPartName', refBodyPartName,... 
                       'VideoAngle', videoAngle,...
+                      'MarkingROILocation', roi_coord,...
                       'Mode', 'Auto');
     else
        load(fullfile(pathname, markingFileName), 'videoFile', 'roiData', 'reachingEvents', 'refPixelLength'); 
@@ -69,12 +74,13 @@ for i = 1:filecount
             'Action',...
             'ActionType',...
             'Consequence'},...
-            reshape([strcat(roiData.roi, {' - Absolute X'}); strcat(roiData.roi, {' - Absolute Y'}); strcat(roiData.roi, {' - Likelihood'})], 1, 18)];
+            reshape([strcat(roiData.roi, {' - Absolute X'}); strcat(roiData.roi, {' - Absolute Y'}); strcat(roiData.roi, {' - Likelihood'})], 1, 12)];
     end
     [r, theta, diffXY, refXYPosition, roiXYPosition, roiFrames] = analyzeMouseAnnotation(roiData, reachingEvents, videoFile,...
         'RefTargetName', refTargetName, 'RefBodyPartName', refBodyPartName,... 
         'ModeFlag', modeFlag,... 
-        'VideoMux', [false false false true], 'WriteFrameCount', writeFrameCount);
+        'VideoMux', [false false false true], 'WriteFrameCount', writeFrameCount,...
+        'ActualVidSize', actualVidSize);
     
     [pathName, trialName, vidExt] = fileparts(videoFile);
     % For windows
