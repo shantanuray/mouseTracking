@@ -140,17 +140,17 @@ end
 %% Start processing
 if isempty(reachingEvents)
     warning(['Processing file ', videoFile,' with no grabs!'])
-    jumpToFrame = 1;
-elseif strcmpi(modeFlag, 'foreground') | strcmpi(modeFlag, 'background-video')
-    jumpToFrame = reachingEvents(find(strcmpi({reachingEvents(:).action}, 'Initialize'))).frameCount;
-    if jumpToFrame > 1
-        frameCount = 1;
-        while frameCount < jumpToFrame
-            readFrame(videoRef);
-            frameCount = frameCount + 1;
-        end
-    end
+% elseif strcmpi(modeFlag, 'foreground') | strcmpi(modeFlag, 'background-video')
+%     jumpToFrame = reachingEvents(find(strcmpi({reachingEvents(:).action}, 'Initialize'))).frameCount;
+%     if jumpToFrame > 1
+%         frameCount = 1;
+%         while frameCount < jumpToFrame
+%             readFrame(videoRef);
+%             frameCount = frameCount + 1;
+%         end
+%     end
 end
+jumpToFrame = 1;
 
 % Get the centroid and bbox of the ref
 refXYPosition = getBox(roiData, refTargetName);
