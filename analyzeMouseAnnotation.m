@@ -393,7 +393,7 @@ return;
         defaultModeFlag = 'foreground';
         defaultWriteFrameCount = true;
         defaultActualVidSize = [1080 1920 3];
-        defaultAtariColor = 'distinguishable_colors';
+        defaultAtariColor = 'white';
         
         addParameter(p,'RefTargetName',defaultRefTargetName, @ischar);
         addParameter(p,'RefBodyPartName',defaultRefBodyPartName, @ischar);
