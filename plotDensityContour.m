@@ -1,3 +1,4 @@
+%Program requires pre loading of a csv file with points to plot, xrange and yrange should include ALL points in the csv file
 function plotDensityContour(X, num_bins, xrange, yrange, num_colors)
     [bin_count,bin_center] = hist3([X(:,2), X(:,1)],[num_bins, num_bins]);
     bin_center{2} = [xrange(1), bin_center{2}, xrange(2)];

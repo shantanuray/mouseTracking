@@ -27,6 +27,7 @@ writeFrameCount = true;
 videoAngle = '';
 roi_coord = [0, 0; 800, 600];
 actualVidSize = [600 800 3];
+atariColor = 'white';
 
 for i = 1:filecount
     r = [];
@@ -80,7 +81,8 @@ for i = 1:filecount
         'RefTargetName', refTargetName, 'RefBodyPartName', refBodyPartName,... 
         'ModeFlag', modeFlag,... 
         'VideoMux', [false false false true], 'WriteFrameCount', writeFrameCount,...
-        'ActualVidSize', actualVidSize);
+        'ActualVidSize', actualVidSize,
+        'AtariColor', atariColor);
     
     [pathName, trialName, vidExt] = fileparts(videoFile);
     % For windows

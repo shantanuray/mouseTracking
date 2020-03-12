@@ -61,10 +61,11 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % To display the marked body part, use a box of predetermined size and color range
     % Size the atari box size (roi and ref)
     boxSize  = 5;   % 5 x 5
-    if atariColor == 'white'
+    if strcmpi(atariColor,'white')
         boxColors = ones(length(roiData.roi),3);
     else
         boxColors = distinguishable_colors(length(roiData.roi));
+    end
     minLikelihood = roiData.minimumLikelihood;
     frameRate = 4;
     refROI = find(strcmpi(roiData.roi, refBodyPartName));
