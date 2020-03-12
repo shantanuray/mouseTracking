@@ -383,10 +383,9 @@ end
 save(fullfile(matDir, [matPrefix,'.mat']), 'roiData', 'reachingEvents', 'isTremorCase', 'videoFile','refPixelLength');
 if isempty(analyzeThis)
     analyzeMouseAnnotation(roiData, reachingEvents, videoFile,... 
-        'RefTargetName', roiData.refTargetName, 'RefBodyPartName', roiData.refBodyPartName,... 
+        'RefTargetName', p.Results.RefTargetName, 'RefBodyPartName', p.Results.RefBodyPartName,... 
         'ModeFlag', 'foreground', 'WriteFrameCount', true);
 end
-
 return;
 
     %% Read input
@@ -451,8 +450,6 @@ return;
         % Obtain the body parts that were marked
 %         roiData = struct([]);
         roiData.roi = p.Results.BodyParts;
-        roiData.refTargetName = p.Results.RefTargetName;
-        roiData.refBodyPartName = p.Results.RefBodyPartName;
         roiData.minimumLikelihood = p.Results.MinimumLikelihood;
         % Read the body part markings from h5 file or mat file
         if isempty(markingFile)
