@@ -43,7 +43,7 @@ function [r, theta, diffXY, refXYPosition, roiXYPosition, roiFrames, traceVideoF
 
 % Initialize settings
 p = readInput(varargin);
-[refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize] = parseInput(p.Results);
+[refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize,atariColor] = parseInput(p.Results);
 
 % Initialize Outputs
 r           = [];
@@ -61,7 +61,10 @@ if strcmpi(modeFlag, 'background-video') | strcmpi(modeFlag, 'foreground')
     % To display the marked body part, use a box of predetermined size and color range
     % Size the atari box size (roi and ref)
     boxSize  = 5;   % 5 x 5
-    boxColors = distinguishable_colors(length(roiData.roi));
+    if atariColor == 'white'
+        boxColors = ones(length(roiData.roi),3);
+    else
+        boxColors = distinguishable_colors(length(roiData.roi));
     minLikelihood = roiData.minimumLikelihood;
     frameRate = 4;
     refROI = find(strcmpi(roiData.roi, refBodyPartName));
@@ -389,6 +392,7 @@ return;
         defaultModeFlag = 'foreground';
         defaultWriteFrameCount = true;
         defaultActualVidSize = [1080 1920 3];
+        defaultAtariColor = 'distinguishable_colors';
         
         addParameter(p,'RefTargetName',defaultRefTargetName, @ischar);
         addParameter(p,'RefBodyPartName',defaultRefBodyPartName, @ischar);
@@ -397,10 +401,11 @@ return;
         addParameter(p,'ModeFlag',defaultModeFlag, @ischar);
         addParameter(p,'WriteFrameCount',defaultWriteFrameCount, @islogical);
         addParameter(p,'ActualVidSize',defaultActualVidSize, @isnumeric);
+        addParameter(p,'AtariColor',defaultAtariColor, @ischar);
         parse(p, input{:});
     end
 
-    function [refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize] = parseInput(p)
+    function [refTargetName,refBodyPartName,maskFlag,ctraceFlag,traceFlag,vwtFlag,bboxFlag,modeFlag,frameCountWriteFlag, actualVidSize, AtariColor] = parseInput(p)
         refTargetName = p.RefTargetName;
         refBodyPartName = p.RefBodyPartName;
         videoMux = num2cell(p.VideoMux);
@@ -409,5 +414,6 @@ return;
         modeFlag = p.ModeFlag;
         frameCountWriteFlag = p.WriteFrameCount;
         actualVidSize = p.ActualVidSize;
+        atariColor = p.AtariColor;
     end
 end
